@@ -242,7 +242,7 @@ public class MainWindow : Window, IDisposable
         var sunActiveColor = 0xFF44FFFFu;
 
         var handleSize = 10f;
-        var playerSize = 16f;
+        var playerSize = 10f;
         var sunSize = 8f;
         var wedgeLen = 300f;
         var lightRadius = 230f;
@@ -304,7 +304,7 @@ public class MainWindow : Window, IDisposable
             changed = true;
         }
         var color = ImGeo.IsHandleHovered() || ImGeo.IsHandleActive() ? sunActiveColor : sunColor;
-        AddLightMarker(lightPos, sunSize * pixels, color);
+        AddLightMarker(lightPos, lightAngle, sunSize * pixels, color);
 
         // Character center indicator.
         AddPlayerMarker(subjectXZ, e.CharacterDirection(), playerSize * pixels, characterColor);
@@ -433,26 +433,27 @@ public class MainWindow : Window, IDisposable
     private static void AddPlayerMarker(Vector2 position, float angle, float size, uint col)
     {
         var (s, c) = MathF.SinCos(angle);
-        var front = new Vector2(c, s) * size / 2;
-        var left = new Vector2(-s, c) * 0.4f * size - front;
-        var right = new Vector2(s, -c) * 0.4f * size - front;
+        var front = new Vector2(c, s) * size;
+        var left = new Vector2(-s, c) * 0.8f * size - front;
+        var right = new Vector2(s, -c) * 0.8f * size - front;
 
         ImGeo.AddTriangleFilled(position + front, position + left, position + right, col);
     }
 
-    private static void AddLightMarker(Vector2 position, float size, uint col)
+    private static void AddLightMarker(Vector2 pos, float angle, float size, uint col)
     {
         var spikiness = 1.5f;
-        ImGeo.AddCircleFilled(position, size, col);
+
+        ImGeo.AddCircleFilled(pos, size, col);
         for (var i = 0; i < 8; i++)
         {
             // Draw a triangle pointing outward.
-            var angle = MathF.Tau * i / 8;
-            var (s, c) = MathF.SinCos(angle);
+            var theta = angle + MathF.Tau * i / 8;
+            var (s, c) = MathF.SinCos(theta);
             var front = new Vector2(c, s) * size * spikiness;
             var left = new Vector2(-s, c) * size;
             var right = new Vector2(s, -c) * size;
-            ImGeo.AddTriangleFilled(position + front, position + left, position + right, col);
+            ImGeo.AddTriangleFilled(pos + front, pos + left, pos + right, col);
         }
     }
 

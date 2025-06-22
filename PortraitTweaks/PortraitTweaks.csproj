@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Dalamud.NET.Sdk/12.0.2">
+    <PropertyGroup>
+        <LangVersion>preview</LangVersion>
+    </PropertyGroup>
+    <PropertyGroup>
+        <Version>0.0.0.1</Version>
+        <Description>Enhances the portrait editor.</Description>
+        <PackageProjectUrl>https://github.com/iri-impulse/PortraitTweaksPlugin</PackageProjectUrl>
+        <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+</Project>

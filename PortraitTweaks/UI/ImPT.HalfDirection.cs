@@ -5,7 +5,7 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility.Numerics;
 using ImGuiNET;
-using PortraitTweaks.Data;
+using PortraitTweaks.Maths;
 
 namespace PortraitTweaks.UI;
 

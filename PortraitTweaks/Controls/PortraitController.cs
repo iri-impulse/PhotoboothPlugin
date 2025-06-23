@@ -4,8 +4,8 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
-using PortraitTweaks.Data;
 using PortraitTweaks.GameExt;
+using PortraitTweaks.Maths;
 
 namespace PortraitTweaks.Controls;
 

@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
-using PortraitTweaks.Data;
+using PortraitTweaks.Maths;
+using PortraitTweaks.Maths.Collision;
 using static PortraitTweaks.Controls.CameraConsts;
 
 namespace PortraitTweaks.Controls;
@@ -48,15 +49,19 @@ namespace PortraitTweaks.Controls;
 /// Allows manipulation of the camera in the portrait editor, while keeping
 /// everything legal and in bounds.
 /// </summary>
-public class CameraController
+internal class CameraController
 {
-    // The camera position. Actually not saved in portraits (!) but it's
-    // one of the values we want to think in terms of for the UX.
-    public Vector3 Camera { get; private set; } = new();
-
     // The focus position. Ordinarily on the character, though can be moved.
     // This concept doesn't exist at all in the original portrait editor.
     public Vector3 Subject { get; private set; } = new();
+
+    public BuiltinCamera Builtin { get; } = new();
+
+    public CustomCamera Custom { get; } = new();
+
+    // The camera position. Actually not saved in portraits (!) but it's
+    // one of the values we want to think in terms of for the UX.
+    public Vector3 Camera => Builtin.Camera;
 
     // This pivot position that controls the default UI. Always directly in
     // front of the camera. Dragging on the portrait pivots around it (left
@@ -66,28 +71,35 @@ public class CameraController
     // part because it's what's saved in the portrait, and in part because it
     // has a constrained legal range so we can only allow camera positions that
     // correspond to some allowed pivot point.
-    public Vector3 Pivot { get; private set; } = new();
+    public Vector3 Pivot => Builtin.Pivot;
+
+    public Vector2 TargetXZ => Custom.TargetXZ;
 
     // The direction of the camera, relative to the pivot point. This is what
     // left-click drag in the default UI modifies. It's saved in portraits, and
     // can't be tilted too far up or down but can rotate anywhere horizontally.
-    public SphereLL Direction { get; private set; } = new();
+    public SphereLL Direction => Builtin.Direction;
 
     // The distance from the camera to the pivot point, which you change with
     // the mousewheel in the default UI. Saved in portraits, and constrained to
     // a legal range.
-    public float Distance { get; private set; } = 0.0f;
+    public float Distance => Builtin.Distance;
 
     // Distance from the camera to the pivot point in the XZ plane. Useful for
     // bird's eye view controls.
     public float DistanceXZ => MathF.Sqrt(Camera.X * Camera.X + Camera.Z * Camera.Z);
 
     // The "zoom factor" from 0 to 200 controlled by the zoom slider in the UI.
-    public byte Zoom { get; private set; } = 0;
+    public byte Zoom => Builtin.Zoom;
 
     // The "normalized zoom", this is the angle in radians from the center to
     // the far edge of the image (so, half the field of view).
-    public float ZoomRadians => 1.28f - (float)Zoom / 200f;
+    public float ZoomRadians => Builtin.FoV;
+
+    public static Collision.Box PivotBoxXZ = new(
+        new(PivotMin.X, PivotMin.Z),
+        new(PivotMax.X, PivotMax.Z)
+    );
 
     public unsafe void Load(Editor e)
     {
@@ -95,11 +107,17 @@ public class CameraController
         var pos = ((Vector4)portrait->CameraPosition).AsVector3();
         var tar = ((Vector4)portrait->CameraTarget).AsVector3();
 
-        Camera = pos * Scale;
-        Pivot = tar * Scale;
-        Direction = SphereLL.FromRadians(portrait->CameraPitch, portrait->CameraYaw);
-        Distance = portrait->CameraDistance * Scale;
-        Zoom = portrait->CameraZoom;
+        var pivot = tar * Scale;
+        var pitch = portrait->CameraPitch;
+        var yaw = portrait->CameraYaw;
+        var direction = SphereLL.FromRadians(pitch, yaw);
+
+        Builtin.SetDirection(direction);
+        Builtin.SetPivot(pivot);
+        Builtin.SetZoom(portrait->CameraZoom);
+        Builtin.SetDistance(portrait->CameraDistance * Scale);
+
+        RecomputeCustom();
     }
 
     public unsafe void Save(Editor e)
@@ -125,13 +143,12 @@ public class CameraController
 
     public void SetZoom(byte zoom)
     {
-        Zoom = Math.Clamp(zoom, (byte)0, (byte)200);
+        Builtin.SetZoom(zoom);
     }
 
     public void SetCameraDistance(float distance)
     {
-        Distance = Math.Clamp(distance, DistanceMin, DistanceMax);
-        RecalculateCameraFromPivot();
+        Builtin.SetDistance(distance);
     }
 
     public void AdjustCameraDistance(float delta)
@@ -142,14 +159,13 @@ public class CameraController
         var zoomFactor = MathF.Tan(ZoomRadians * 0.5f);
         var normalizedDistance = zoomFactor * Distance;
         var update = 2 * normalizedDistance * increment * delta;
-        Distance = Math.Clamp(Distance + update, DistanceMin, DistanceMax);
-        RecalculateCameraFromPivot();
+        Builtin.SetDistance(Builtin.Distance + update);
     }
 
-    public void AdjustPivotPosition(Vector3 delta)
+    public void Translate(Vector3 delta)
     {
-        Pivot = Vector3.Clamp(Pivot + delta, PivotMin, PivotMax);
-        RecalculateCameraFromPivot();
+        var displacement = Builtin.TryTranslate(delta);
+        Custom.Translate(displacement);
     }
 
     public void SetCameraPosition(Vector3 newCamera, bool preserveCameraDistance = false)
@@ -161,9 +177,8 @@ public class CameraController
         var latitude = Math.Clamp(newDirection.LatRadians, PitchMin, PitchMax);
         newDirection = SphereLL.FromRadians(latitude, newDirection.LonRadians);
 
-        Direction = newDirection;
-        Distance = newDistance;
-        RecalculateCameraFromPivot();
+        Builtin.SetDirection(newDirection);
+        Builtin.SetDistance(newDistance);
     }
 
     // Moves the camera to a place with a given projection in the XZ plane,
@@ -181,17 +196,17 @@ public class CameraController
     {
         if (preserveCharacterAngle)
         {
-            var oldDirection = SphereLL.FromDirection(Pivot - Subject);
-            var newDirection = SphereLL.FromDirection(Pivot - newSubject);
-
-            Direction = SphereLL.FromRadians(
-                Direction.LatRadians + newDirection.LatRadians - oldDirection.LatRadians,
-                Direction.LonRadians + newDirection.LonRadians - oldDirection.LonRadians
+            var subjectOld = SphereLL.FromDirection(Pivot - Subject);
+            var subjectNew = SphereLL.FromDirection(Pivot - newSubject);
+            var newDirection = SphereLL.FromRadians(
+                Direction.LatRadians + subjectNew.LatRadians - subjectOld.LatRadians,
+                Direction.LonRadians + subjectNew.LonRadians - subjectOld.LonRadians
             );
+
+            Builtin.SetDirection(newDirection);
         }
 
         Subject = newSubject;
-        RecalculateCameraFromPivot();
     }
 
     // Move the pivot onto the subject (or as close as possible), and face the
@@ -202,32 +217,21 @@ public class CameraController
         var newPivot = new Vector3(Subject.X, Pivot.Y, Subject.Z);
 
         SphereLL newDirection;
-        if (
-            newPivot.X < PivotMin.X
-            || newPivot.X > PivotMax.X
-            || newPivot.Z < PivotMin.Z
-            || newPivot.Z > PivotMax.Z
-        )
+        if (PivotBoxXZ.Contains(newPivot.XZ()))
         {
             // If the subject is outside the bounds, we want to move the camera
             // and face the direction between hte pivot and the subject.
-            Pivot = Vector3.Clamp(newPivot, PivotMin, PivotMax);
+            Builtin.SetPivot(newPivot);
             newDirection = SphereLL.FromDirection(Pivot - Subject);
         }
         else
         {
             // Otherwise, we face the current camera onto the pivot.
-            Pivot = newPivot;
+            Builtin.SetPivot(newPivot);
             newDirection = SphereLL.FromDirection(Camera - Pivot);
         }
 
-        Direction = SphereLL.FromRadians(
-            Math.Clamp(newDirection.LatRadians, PitchMin, PitchMax),
-            newDirection.LonRadians
-        );
-
-        // Final camera position.
-        RecalculateCameraFromPivot();
+        Builtin.SetDirection(newDirection);
     }
 
     public void SetPivotPositionXZ(Vector2 pivotXZ, bool preserveCharacterAngle = false)
@@ -237,42 +241,81 @@ public class CameraController
 
         if (preserveCharacterAngle)
         {
-            var oldAngle = MathF.Atan2(Pivot.X - Subject.X, Pivot.Z - Subject.Z);
-            var newAngle = MathF.Atan2(newPivot.X - Subject.X, newPivot.Z - Subject.Z);
-
-            Direction = SphereLL.FromRadians(
+            var oldAngle = -(Pivot.XZ() - Subject.XZ()).Atan2();
+            var newAngle = -(newPivot.XZ() - Subject.XZ()).Atan2();
+            var newDirection = SphereLL.FromRadians(
                 Direction.LatRadians,
                 Direction.LonRadians + newAngle - oldAngle
             );
+
+            Builtin.SetDirection(newDirection);
         }
 
-        Pivot = newPivot;
-        RecalculateCameraFromPivot();
+        Builtin.SetPivot(newPivot);
+    }
+
+    public void SetTargetPositionXZ(Vector2 targetXZ)
+    {
+        Custom.SetTargetXZ(targetXZ);
+        RecomputeBuiltin();
+        RecomputeCustom();
     }
 
     public void SetPivotPositionY(float pivotY, bool preserveCharacterAngle = false)
     {
         var newPivot = new Vector3(Pivot.X, pivotY, Pivot.Z);
-
-        Pivot = newPivot;
-        RecalculateCameraFromPivot();
+        Builtin.SetPivot(newPivot);
     }
 
     public void SetCameraYawRadians(float newYaw)
     {
-        Direction = SphereLL.FromRadians(Direction.LatRadians, newYaw);
-        RecalculateCameraFromPivot();
+        var newDirection = SphereLL.FromRadians(Direction.LatRadians, newYaw);
+        Builtin.SetDirection(newDirection);
     }
 
     public void SetCameraPitchRadians(float newPitch)
     {
-        Direction = SphereLL.FromRadians(newPitch, Direction.LonRadians);
-        RecalculateCameraFromPivot();
+        var newDirection = SphereLL.FromRadians(newPitch, Direction.LonRadians);
+        Builtin.SetDirection(newDirection);
     }
 
-    private void RecalculateCameraFromPivot()
+    private void RecomputeCustom()
     {
-        var displacement = Direction.Direction() * Distance;
-        Camera = Pivot + displacement;
+        Custom.SetCamera(Builtin.Camera);
+        Custom.SetPitch(Builtin.Direction.LatRadians);
+
+        var line = new Collision.Line(Camera.XZ(), Pivot.XZ());
+        //var newTargetXZ = line.Closest(TargetXZ, out var _);
+        //Custom.SetTargetXZ(newTargetXZ);
+
+        Custom.SetTargetViaYaw(Builtin.Direction.LonRadians);
+    }
+
+    private void RecomputeBuiltin()
+    {
+        // Find a legal pivot position based on the camera and target.
+        var segment = new Collision.Segment(Custom.Camera.XZ(), Custom.TargetXZ);
+        var legal = segment.Intersects(PivotBoxXZ, out var near, out var far);
+
+        if (!legal)
+        {
+            return;
+        }
+
+        var distanceXZ = Builtin.Distance * MathF.Cos(Builtin.Direction.LatRadians);
+        var pos = Math.Clamp(distanceXZ / segment.Length(), near, far);
+        var newPivotXZ = segment.At(pos);
+
+        var newPivot = new Vector3(newPivotXZ.X, Builtin.Pivot.Y, newPivotXZ.Y);
+        var newDistance = Vector3.Distance(newPivot, Custom.Camera);
+
+        if (newDistance < DistanceMin || newDistance > DistanceMax)
+        {
+            return;
+        }
+
+        Builtin.SetPivot(newPivot);
+        Builtin.SetDirection(Custom.Direction);
+        Builtin.SetDistance(newDistance);
     }
 }

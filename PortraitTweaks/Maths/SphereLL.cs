@@ -1,12 +1,12 @@
 using System;
 using System.Numerics;
 
-namespace PortraitTweaks.Data;
+namespace PortraitTweaks.Maths;
 
 /// <summary>
 /// Latitude/longitude sphere representation.
 /// </summary>
-public struct SphereLL
+public record struct SphereLL
 {
     private float _latitude;
     private float _longitude;

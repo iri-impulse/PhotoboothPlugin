@@ -1,14 +1,17 @@
 using System;
 using System.Numerics;
+using Dalamud.Game.Config;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using ImGuiNET;
 using PortraitTweaks.Controls;
-using PortraitTweaks.Data;
+using PortraitTweaks.Maths;
 using PortraitTweaks.UI;
 using static PortraitTweaks.Configuration;
 
@@ -18,7 +21,7 @@ public class MainWindow : Window, IDisposable
 {
     private readonly Plugin _plugin;
     private readonly PortraitController _portrait = new(new());
-    private readonly CameraController _camera = new();
+    private CameraController _camera = new();
 
     private bool _followCharacter = false;
 
@@ -60,7 +63,10 @@ public class MainWindow : Window, IDisposable
         _lastPose = -1;
         _lastDuration = -1f;
         _followCharacter = false;
+        _camera = new CameraController();
     }
+
+    private float Scale => ImGuiHelpers.GlobalScale;
 
     private unsafe void SnapToBannerEditor()
     {
@@ -79,7 +85,7 @@ public class MainWindow : Window, IDisposable
 
         var top = col->GetYFloat();
         var left = col->GetXFloat();
-        var editorWidth = col->GetWidth();
+        var editorWidth = col->GetWidth() * col->GetScaleX();
         var screenWidth = device->Width;
         var windowWidth = ImGui.GetWindowSize().X;
 
@@ -238,6 +244,7 @@ public class MainWindow : Window, IDisposable
         var characterColor = 0xFF00EEEEu;
         var cameraColor = 0xFF8080FFu;
         var pivotColor = 0xFFE0E0E0u;
+        var targetColor = 0xFF00FF00u;
         var sunColor = 0xFF00EEEEu;
         var sunActiveColor = 0xFF44FFFFu;
 
@@ -309,19 +316,47 @@ public class MainWindow : Window, IDisposable
         // Character center indicator.
         AddPlayerMarker(subjectXZ, e.CharacterDirection(), playerSize * pixels, characterColor);
 
-        // Camera pivot handle.
+        // Handles.
         var handlePixels = handleSize * pixels;
-        if (ImGeo.DragHandleCircle("##CameraPivot", ref pivotXZ, handlePixels, pivotColor))
+
+        // Camera target handle.
+        var targetXZ = _camera.TargetXZ;
+        var newTargetXZ = targetXZ;
+        if (ImGeo.DragHandleCircle("##CameraTarget", ref newTargetXZ, handlePixels, targetColor))
         {
-            _camera.SetPivotPositionXZ(pivotXZ, true);
+            _camera.SetTargetPositionXZ(newTargetXZ);
             changed = true;
         }
 
-        // Camera position handle.
-        if (ImGeo.DragHandleCircle("##CameraPosition", ref cameraXZ, handlePixels, cameraColor))
+        if (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive())
         {
-            _camera.SetCameraPositionXZ(cameraXZ);
+            ImGeo.AddCircle(cameraXZ, Vector2.Distance(cameraXZ, targetXZ), targetColor);
+        }
+
+        // Camera pivot handle.
+        var newPivotXZ = pivotXZ;
+        if (ImGeo.DragHandleCircle("##CameraPivot", ref newPivotXZ, handlePixels, pivotColor))
+        {
+            _camera.SetPivotPositionXZ(newPivotXZ, true);
             changed = true;
+        }
+
+        if (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive())
+        {
+            ImGeo.AddCircle(subjectXZ, Vector2.Distance(pivotXZ, subjectXZ), pivotColor);
+        }
+
+        // Camera position handle.
+        var newCameraXZ = cameraXZ;
+        if (ImGeo.DragHandleCircle("##CameraPosition", ref newCameraXZ, handlePixels, cameraColor))
+        {
+            _camera.SetCameraPositionXZ(newCameraXZ);
+            changed = true;
+        }
+
+        if (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive())
+        {
+            ImGeo.AddCircle(pivotXZ, _camera.Distance, cameraColor);
         }
 
         // Right click pan.
@@ -336,7 +371,7 @@ public class MainWindow : Window, IDisposable
             if (delta.LengthSquared() > 1e-6f)
             {
                 var pivotDelta = new Vector3(delta.X, 0, delta.Y);
-                _camera.AdjustPivotPosition(pivotDelta);
+                _camera.Translate(pivotDelta);
                 changed = true;
             }
         }

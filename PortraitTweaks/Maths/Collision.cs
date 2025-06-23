@@ -36,6 +36,56 @@ internal static class Collision
             t = Vector2.Dot(ap, ab) / Vector2.Dot(ab, ab);
             return A + t * ab;
         }
+
+        public readonly bool Intersects(in Box box, out float t0, out float t1)
+        {
+            // Liang-Barsky algorithm for line-box intersection. We keep track
+            // of how far along the line the first and second intersection
+            // (starting from A) are, which is to say the segment of the line
+            // that lies inside the box.
+            t0 = float.MinValue;
+            t1 = float.MaxValue;
+
+            var d = B - A;
+
+            var min = box.Min;
+            var max = box.Max;
+
+            // Go through each edge, considered as an oriented halfplane, and
+            // "clip off" the part of the segment that's on the wrong side of
+            // the halfplane.
+            for (var edge = 0; edge < 4; edge++)
+            {
+                var (p, q) = edge switch
+                {
+                    0 => (-d.X, -(min.X - A.X)),
+                    1 => (d.X, (max.X - A.X)),
+                    2 => (-d.Y, -(min.Y - A.Y)),
+                    3 => (d.Y, (max.Y - A.Y)),
+                    _ => throw new NotImplementedException(),
+                };
+
+                var r = q / p;
+
+                if (MathF.Abs(p) < Epsilon && q < 0)
+                {
+                    // Line is parallel to the edge and outside the box.
+                    return false;
+                }
+
+                if (p < 0)
+                {
+                    t0 = Math.Max(t0, r);
+                }
+                else if (p > 0)
+                {
+                    t1 = Math.Min(t1, r);
+                }
+            }
+
+            // If the segment hasn't been clipped away, it intersects the box.
+            return t0 <= t1;
+        }
     }
 
     /// <summary>
@@ -77,54 +127,20 @@ internal static class Collision
         /// Check if this segment intersects with an axis-aligned box, and
         /// compute the distance along the segment to the intersection points.
         /// </summary>
-        public readonly bool Intersects(in Box box, out float t0, out float t1)
+        public readonly bool Intersects(in Box box, out float near, out float far)
         {
-            // Liang-Barsky algorithm for line-box intersection. We keep track
-            // of how far along the segment the first and second intersection
-            // (starting from A) are, which is to say the subsegment of the
-            // line that lies inside the box.
-            t0 = 0f;
-            t1 = 1f;
-
-            var d = B - A;
-
-            var min = box.Min;
-            var max = box.Max;
-
-            // Go through each edge, considered as an oriented halfplane, and
-            // "clip off" the part of the segment that's on the wrong side of
-            // the halfplane.
-            for (var edge = 0; edge < 4; edge++)
+            var line = new Line(A, B);
+            if (line.Intersects(box, out near, out far))
             {
-                var (p, q) = edge switch
-                {
-                    0 => (-d.X, -(min.X - A.X)),
-                    1 => (d.X, (max.X - A.X)),
-                    2 => (-d.Y, -(min.Y - A.Y)),
-                    3 => (d.Y, (max.Y - A.Y)),
-                    _ => throw new NotImplementedException(),
-                };
-
-                var r = q / p;
-
-                if (MathF.Abs(p) < Epsilon && q < 0)
-                {
-                    // Segment is parallel to the edge and outside the box.
-                    return false;
-                }
-
-                if (p < 0)
-                {
-                    t0 = Math.Max(t0, r);
-                }
-                else if (p > 0)
-                {
-                    t1 = Math.Min(t1, r);
-                }
+                // Clamp the intersection points to the segment.
+                near = Math.Max(0, near);
+                far = Math.Min(1, far);
+                return near <= far;
             }
-
-            // If the segment hasn't been clipped away, it intersects the box.
-            return t0 <= t1;
+            else
+            {
+                return false;
+            }
         }
     }
 

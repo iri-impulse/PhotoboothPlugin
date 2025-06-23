@@ -356,7 +356,7 @@ public class MainWindow : Window, IDisposable
 
         if (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive())
         {
-            ImGeo.AddCircle(pivotXZ, _camera.Distance, cameraColor);
+            ImGeo.AddCircle(targetXZ, Vector2.Distance(cameraXZ, targetXZ), cameraColor);
         }
 
         // Right click pan.

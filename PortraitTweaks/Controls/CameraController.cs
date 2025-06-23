@@ -117,7 +117,12 @@ internal class CameraController
         Builtin.SetZoom(portrait->CameraZoom);
         Builtin.SetDistance(portrait->CameraDistance * Scale);
 
-        RecomputeCustom();
+        //RecomputeCustom();
+
+        Custom.SetCamera(Builtin.Camera);
+        Custom.SetPitch(Builtin.Direction.LatRadians);
+        //var line = new Collision.Line(Builtin.Camera.XZ(), Builtin.Pivot.XZ());
+        Custom.SetTargetViaYaw(Builtin.Direction.LonRadians);
     }
 
     public unsafe void Save(Editor e)
@@ -160,6 +165,7 @@ internal class CameraController
         var normalizedDistance = zoomFactor * Distance;
         var update = 2 * normalizedDistance * increment * delta;
         Builtin.SetDistance(Builtin.Distance + update);
+        RecomputeCustom();
     }
 
     public void Translate(Vector3 delta)
@@ -185,11 +191,17 @@ internal class CameraController
     // by setting the camera yaw and distance.
     public void SetCameraPositionXZ(Vector2 cameraXZ)
     {
-        var dXZ = cameraXZ - new Vector2(Pivot.X, Pivot.Z);
-        var newYaw = MathF.Atan2(dXZ.X, dXZ.Y);
-        SetCameraYawRadians(newYaw);
-        var newDist = dXZ.Length() / MathF.Abs(MathF.Cos(Direction.LatRadians));
-        SetCameraDistance(newDist);
+        var camera = new Vector3(cameraXZ.X, Camera.Y, cameraXZ.Y);
+        Custom.SetCamera(camera);
+        RecomputeBuiltin(true);
+        RecomputeCustom();
+    }
+
+    public void SetTargetPositionXZ(Vector2 targetXZ)
+    {
+        Custom.SetTargetXZ(targetXZ);
+        RecomputeBuiltin();
+        RecomputeCustom();
     }
 
     public void SetSubjectPosition(Vector3 newSubject, bool preserveCharacterAngle = false)
@@ -254,13 +266,6 @@ internal class CameraController
         Builtin.SetPivot(newPivot);
     }
 
-    public void SetTargetPositionXZ(Vector2 targetXZ)
-    {
-        Custom.SetTargetXZ(targetXZ);
-        RecomputeBuiltin();
-        RecomputeCustom();
-    }
-
     public void SetPivotPositionY(float pivotY, bool preserveCharacterAngle = false)
     {
         var newPivot = new Vector3(Pivot.X, pivotY, Pivot.Z);
@@ -283,36 +288,69 @@ internal class CameraController
     {
         Custom.SetCamera(Builtin.Camera);
         Custom.SetPitch(Builtin.Direction.LatRadians);
-
-        var line = new Collision.Line(Camera.XZ(), Pivot.XZ());
-        //var newTargetXZ = line.Closest(TargetXZ, out var _);
-        //Custom.SetTargetXZ(newTargetXZ);
-
         Custom.SetTargetViaYaw(Builtin.Direction.LonRadians);
     }
 
-    private void RecomputeBuiltin()
+    public void RecomputeBuiltin(bool allowCameraMovement = false)
     {
-        // Find a legal pivot position based on the camera and target.
-        var segment = new Collision.Segment(Custom.Camera.XZ(), Custom.TargetXZ);
-        var legal = segment.Intersects(PivotBoxXZ, out var near, out var far);
+        // Move the pivot to the spot in the line of sight closest to the
+        // subject, respecting limits of camera distance and position.
+        var cameraXZ = Custom.Camera.XZ();
+        var pivotXZ = Pivot.XZ();
+        var targetXZ = Custom.TargetXZ;
+        var subjectXZ = Subject.XZ();
 
-        if (!legal)
+        var line = new Collision.Line(cameraXZ, targetXZ);
+        var lineLength = Vector2.Distance(cameraXZ, targetXZ);
+
+        if (lineLength < 0.001f)
         {
             return;
         }
 
-        var distanceXZ = Builtin.Distance * MathF.Cos(Builtin.Direction.LatRadians);
-        var pos = Math.Clamp(distanceXZ / segment.Length(), near, far);
-        var newPivotXZ = segment.At(pos);
-
-        var newPivot = new Vector3(newPivotXZ.X, Builtin.Pivot.Y, newPivotXZ.Y);
-        var newDistance = Vector3.Distance(newPivot, Custom.Camera);
-
-        if (newDistance < DistanceMin || newDistance > DistanceMax)
+        if (!line.Intersects(PivotBoxXZ, out var near, out var far))
         {
             return;
         }
+
+        line.Closest(subjectXZ, out var t);
+
+        var distanceScale = MathF.Cos(Custom.Pitch);
+        var minDistance = DistanceMin * distanceScale / lineLength;
+        var maxDistance = DistanceMax * distanceScale / lineLength;
+
+        // We now have an interval of legal values based on the camera distance
+        // and an interval of legal values based on the bounding box. But these
+        // might not overlap, in which case there's no feasible pivot to give
+        // rise to the original camera position.
+        //
+        // In these cases we send the pivot to the edge of the box, which ends
+        // up pushing or pulling the camera to be back within distance.
+
+        float min;
+        float max;
+
+        if (near > maxDistance)
+        {
+            if (!allowCameraMovement)
+                return;
+            min = max = near;
+        }
+        else if (far < minDistance)
+        {
+            if (!allowCameraMovement)
+                return;
+            min = max = far;
+        }
+        else
+        {
+            min = Math.Max(near, minDistance);
+            max = Math.Min(far, maxDistance);
+        }
+
+        var newPivotXZ = line.At(Math.Clamp(t, min, max));
+        var newPivot = new Vector3(newPivotXZ.X, Pivot.Y, newPivotXZ.Y);
+        var newDistance = Vector2.Distance(newPivotXZ, cameraXZ) / distanceScale;
 
         Builtin.SetPivot(newPivot);
         Builtin.SetDirection(Custom.Direction);

@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using Dalamud.Interface.Utility;
 using ImGuiNET;
 
 namespace PortraitTweaks.UI;
@@ -113,6 +114,13 @@ public static partial class ImGeo
         if (_CurentView == null)
             throw new InvalidOperationException("No viewport is currently active.");
         return _CurentView.ScaleToScreen(view);
+    }
+
+    public static Vector2 GetPixelSize()
+    {
+        if (_CurentView == null)
+            throw new InvalidOperationException("No viewport is currently active.");
+        return _CurentView.ScaleToView(Vector2.One) * ImGuiHelpers.GlobalScale;
     }
 
     //
@@ -242,11 +250,13 @@ public static partial class ImGeo
 
     public static void AddLine(Vector2 p1, Vector2 p2, uint col, float thickness = 1.0f)
     {
+        thickness *= ImGuiHelpers.GlobalScale;
         GetActiveDrawList().AddLine(ViewToScreen(p1), ViewToScreen(p2), col, thickness);
     }
 
     public static void AddRect(Vector2 p_min, Vector2 p_max, uint col, float rounding = 0.0f, ImDrawFlags flags = 0, float thickness = 1.0f)
     {
+        thickness *= ImGuiHelpers.GlobalScale;
         GetActiveDrawList().AddRect(ViewToScreen(p_min), ViewToScreen(p_max), col, rounding, flags, thickness);
     }
 
@@ -257,6 +267,7 @@ public static partial class ImGeo
 
     public static void AddTriangle(Vector2 p1, Vector2 p2, Vector2 p3, uint col, float thickness = 1.0f)
     {
+        thickness *= ImGuiHelpers.GlobalScale;
         GetActiveDrawList().AddTriangle(ViewToScreen(p1), ViewToScreen(p2), ViewToScreen(p3), col, thickness);
     }
 
@@ -267,6 +278,7 @@ public static partial class ImGeo
 
     public static void AddCircle(Vector2 center, float radius, uint col, int num_segments = 0, float thickness = 1.0f)
     {
+        thickness *= ImGuiHelpers.GlobalScale;
         GetActiveDrawList().AddCircle(ViewToScreen(center), radius * ScaleToScreen(Vector2.One).X, col, num_segments, thickness);
     }
 

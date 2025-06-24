@@ -275,7 +275,7 @@ public class MainWindow : Window, IDisposable
             new Vector2(max.X + maxD, max.Z + maxD),
             new Vector2(w, w * zSpan / xSpan)
         );
-        var pixels = ImGeo.ScaleToView(Vector2.One).X;
+        var pixels = ImGeo.GetPixelSize().X;
 
         var subject = _camera.Subject;
         var cameraXZ = new Vector2(_camera.Camera.X, _camera.Camera.Z);

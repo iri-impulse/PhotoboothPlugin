@@ -2,6 +2,7 @@ using System;
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility.Numerics;
 using ImGuiNET;
@@ -45,11 +46,11 @@ public static partial class ImPT
         var width = ImGui.CalcItemWidth();
         var screenSize = new Vector2(width, MathF.Ceiling(aspectRatio * width));
         var viewSize = bottomright - topleft;
-        var pad = padPx * viewSize / screenSize;
+        var pad = padPx * viewSize / screenSize * ImGuiHelpers.GlobalScale;
         ImGeo.BeginViewport("viewport", topleft - pad, bottomright + pad, screenSize);
 
         // Bounding box for visibility.
-        var pixels = ImGeo.ScaleToView(Vector2.One);
+        var pixels = ImGeo.GetPixelSize();
         ImGeo.AddRect(topleft - pad, bottomright + pad, borderColor);
 
         // Display the numerical values.
@@ -67,11 +68,8 @@ public static partial class ImPT
         else
         {
             ImGeo.AddCircle(xy, handlePx * pixels.X, disabledColor);
-            var disabledSize = ImGui.CalcTextSize(disabledReason);
-            var midTop = new Vector2(
-                topleft.X + (viewSize.X - disabledSize.X * pixels.X) / 2,
-                topleft.Y
-            );
+            var disabledSize = ImGeo.CalcTextSize(disabledReason);
+            var midTop = new Vector2(topleft.X + (viewSize.X - disabledSize.X) / 2, topleft.Y);
             ImGeo.AddText(midTop, disabledColor, disabledReason);
         }
 

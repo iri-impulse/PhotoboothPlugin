@@ -1,9 +1,9 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using Lumina.Excel.Sheets;
 using PortraitTweaks.Controls;
-using PortraitTweaks.UI;
+using PortraitTweaks.UI.Stateless;
 
 namespace PortraitTweaks.Windows;
 

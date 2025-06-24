@@ -1,4 +1,4 @@
-namespace PortraitTweaks.UI;
+namespace PortraitTweaks.UI.Stateless;
 
 /// <summary>
 /// Custom stateless ImGui widgets.

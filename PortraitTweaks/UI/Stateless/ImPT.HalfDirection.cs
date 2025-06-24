@@ -8,7 +8,7 @@ using Dalamud.Utility.Numerics;
 using ImGuiNET;
 using PortraitTweaks.Maths;
 
-namespace PortraitTweaks.UI;
+namespace PortraitTweaks.UI.Stateless;
 
 public static partial class ImPT
 {

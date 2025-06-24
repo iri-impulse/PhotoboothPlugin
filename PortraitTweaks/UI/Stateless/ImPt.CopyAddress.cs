@@ -1,6 +1,6 @@
 using ImGuiNET;
 
-namespace PortraitTweaks.UI;
+namespace PortraitTweaks.UI.Stateless;
 
 public static partial class ImPT
 {

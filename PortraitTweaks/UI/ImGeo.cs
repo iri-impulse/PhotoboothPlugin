@@ -130,7 +130,9 @@ public static partial class ImGeo
     // General handle inspection functions, by analogy with ImGui `IsItemXYZ`.
     public static bool IsHandleHovered(ImGuiHoveredFlags flags = ImGuiHoveredFlags.None)
     {
-        return ImGui.IsItemHovered(flags) && _CurrentHandle.HitTest(MouseViewPos());
+        return _ActiveHandleId == 0
+            && ImGui.IsItemHovered(flags)
+            && _CurrentHandle.HitTest(MouseViewPos());
     }
 
     public static bool IsHandleClicked(ImGuiMouseButton button = ImGuiMouseButton.Left)

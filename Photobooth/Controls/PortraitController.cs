@@ -55,8 +55,6 @@ public class PortraitController : IDisposable
             e.SetHasChanged(true);
         }
 
-        e.BindUI();
-
         _progressPinnedLast = _progressPinnedNow;
         _framesSinceReset = Math.Min(60, _framesSinceReset + 1);
     }
@@ -128,7 +126,7 @@ public class PortraitController : IDisposable
             if (BannerTimeline.Type == 2 || BannerTimeline.Type == 20)
             {
                 progress -= CorrectionFactor(Framework.Instance()->FrameRate);
-                e.ToggleAnimation(true);
+                e.ToggleAnimationPlayback(false);
             }
 
             e.SetAnimationProgress(progress);

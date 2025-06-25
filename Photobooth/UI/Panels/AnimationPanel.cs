@@ -38,8 +38,7 @@ internal class AnimationPanel(PortraitController portrait)
         var icon = paused ? FontAwesomeIcon.Play : FontAwesomeIcon.Pause;
         if (ImGuiComponents.IconButton(icon, new(ImGui.GetContentRegionAvail().X * 0.15f, 0)))
         {
-            e.ToggleAnimation(paused);
-            e.BindUI();
+            e.ToggleAnimationPlayback(!paused);
         }
 
         var time = _portrait.GetAnimationProgress();

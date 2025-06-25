@@ -62,17 +62,23 @@ public unsafe ref struct Editor
         return Portrait->IsAnimationPaused();
     }
 
-    public void ToggleAnimation(bool playing)
+    public void ToggleAnimationPlayback(bool paused)
     {
         AssertValid();
 
-        if (IsAnimationPaused() == !playing)
+        if (IsAnimationPaused() == paused)
         {
             return;
         }
 
-        Portrait->PendingAnimationPauseState = !playing;
+        Portrait->PendingAnimationPauseState = paused;
         Portrait->IsAnimationPauseStatePending = true;
+
+        var addon = (AddonBannerEditor*)Plugin.GameGui.GetAddonByName("BannerEditor");
+        if (addon == null)
+            return;
+
+        addon->PlayAnimationCheckbox->SetChecked(!paused);
     }
 
     public float GetAnimationDuration()
@@ -134,26 +140,6 @@ public unsafe ref struct Editor
         };
 
         timeline->TimelineSequencer.PlayTimeline(row_id, &req);
-    }
-
-    public unsafe void BindUI()
-    {
-        AssertValid();
-
-        var addon = (AddonBannerEditor*)Plugin.GameGui.GetAddonByName("BannerEditor");
-        if (addon == null)
-            return;
-
-        // TODO - need to RE the protocol here a bit, or find a less efficient
-        // but more reliable way to update the builtin portrait editor UI.
-
-        // Syncs the pause button to the current animation state.
-        var atk = State->UIModule->GetRaptureAtkModule();
-        AtkValue[] vals = [];
-        fixed (AtkValue* pVals = vals)
-        {
-            atk->RefreshAddon(Agent->AddonId, 0, pVals);
-        }
     }
 
     public unsafe void SetHasChanged(bool changed)

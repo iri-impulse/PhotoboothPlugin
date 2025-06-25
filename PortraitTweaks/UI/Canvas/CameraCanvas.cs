@@ -18,7 +18,7 @@ public class CameraCanvas : IDisposable
     private const uint PlayerColor = 0xFF00EEEEu;
     private const uint CameraColor = 0xFF8080FFu;
     private const uint PivotColor = 0xFFE0E0E0u;
-    private const uint TargetColor = 0xFF00FF00u;
+    private const uint TargetColor = PivotColor;
     private const uint SunColor = 0xFF00EEEEu;
     private const uint SunActiveColor = 0xFF44FFFFu;
     private const uint OrbitColor = 0x60FFFFFFu;
@@ -26,6 +26,7 @@ public class CameraCanvas : IDisposable
     private const float HandleSize = 10f;
     private const float PlayerSize = 10f;
     private const float SunSize = 8f;
+    private const float PivotSize = 6f;
     private const float WedgeLen = 300f;
     private const float SunOrbit = 230f;
 
@@ -84,6 +85,11 @@ public class CameraCanvas : IDisposable
             lightDirection.SetRadians(lightDirection.LatRadians, newAngle);
         }
 
+        if (ImGeo.IsHandleActive())
+        {
+            AddOrbitIndicator(lightPos, Vector2.Zero);
+        }
+
         var active = ImGeo.IsHandleHovered() || ImGeo.IsHandleActive();
         AddLightMarker(lightPos, lightAngle, active);
 
@@ -97,18 +103,12 @@ public class CameraCanvas : IDisposable
 
     public bool DragPivot(ref Vector2 pivotXZ)
     {
-        return ImGeo.DragHandleCircle("##CameraPivot", ref pivotXZ, HandlePixels, PivotColor);
+        return ImGeo.DragHandleCircle("##CameraPivot", ref pivotXZ, HandlePixels, 0);
     }
 
     public bool DragTarget(ref Vector2 targetXZ)
     {
         return ImGeo.DragHandleCircle("##CameraTarget", ref targetXZ, HandlePixels, TargetColor);
-    }
-
-    private void AddBackground()
-    {
-        // Boundary area for camera pivot.
-        ImGeo.AddRect(_Min, _Max, BoundaryColor);
     }
 
     public void AddCameraWedge(Vector2 cameraXZ, float facingAngle, float widthAngle)
@@ -138,6 +138,41 @@ public class CameraCanvas : IDisposable
         var right = new Vector2(s, -c) * 0.8f * size - front;
 
         ImGeo.AddTriangleFilled(pos + front, pos + left, pos + right, PlayerColor);
+    }
+
+    public void AddCameraApparatus(Vector2 cameraXZ, Vector2 pivotXZ, Vector2 targetXZ)
+    {
+        var forward = Vector2.Normalize(targetXZ - cameraXZ);
+
+        ImGeo.AddLine(cameraXZ, targetXZ, PivotColor);
+        AddTargetMarker(targetXZ, forward);
+        AddPivotMarker(pivotXZ, forward);
+    }
+
+    private void AddBackground()
+    {
+        // Boundary area for camera pivot.
+        ImGeo.AddRect(_Min, _Max, BoundaryColor);
+    }
+
+    private void AddPivotMarker(Vector2 pos, Vector2 forward)
+    {
+        forward = Vector2.Normalize(forward) * PivotSize * _pixels.X;
+        var right = new Vector2(-forward.Y, forward.X);
+        ImGeo.AddQuadFilled(pos - forward, pos + right, pos + forward, pos - right, PivotColor);
+    }
+
+    private void AddTargetMarker(Vector2 pos, Vector2 forward)
+    {
+        var unit = Vector2.Normalize(forward) * HandleSize * _pixels.X;
+        var right = new Vector2(-unit.Y, unit.X) * 0.8f;
+        var end = unit * MathF.Sqrt(3) / 2;
+        ImGeo.AddTriangleFilled(
+            pos + end,
+            pos + right - unit / 2,
+            pos - right - unit / 2,
+            PivotColor
+        );
     }
 
     private void AddLightMarker(Vector2 pos, float angle, bool hovered)

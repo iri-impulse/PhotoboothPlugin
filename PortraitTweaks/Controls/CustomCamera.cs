@@ -15,6 +15,11 @@ namespace PortraitTweaks.Controls;
 /// </remarks>
 internal class CustomCamera
 {
+    public static Vector2 TargetMinXZ { get; } =
+        CameraConsts.PivotMin.XZ() - CameraConsts.DistanceMax * Vector2.One;
+    public static Vector2 TargetMaxXZ { get; } =
+        CameraConsts.PivotMax.XZ() + CameraConsts.DistanceMax * Vector2.One;
+
     public Vector3 Camera { get; private set; } = Vector3.Zero;
     public Vector2 TargetXZ { get; private set; } = Vector2.Zero;
     public float Pitch { get; private set; } = 0f;
@@ -40,7 +45,9 @@ internal class CustomCamera
 
     public void SetTargetXZ(Vector2 targetXZ)
     {
-        TargetXZ = targetXZ;
+        // Enforce some limits here to make sure the target can't accidentally
+        // escape (due to bugs, floating point issues, etc).
+        TargetXZ = Vector2.Clamp(targetXZ, TargetMinXZ, TargetMaxXZ);
     }
 
     public void SetTargetViaYaw(float yaw)
@@ -48,7 +55,7 @@ internal class CustomCamera
         // 0 is camera up, pi/2 is camera left, and we're controlling the
         // antipodal target here.
         var (s, c) = MathF.SinCos(-yaw - MathF.PI / 2);
-        TargetXZ = CameraXZ + DistanceXZ * new Vector2(c, s);
+        SetTargetXZ(CameraXZ + DistanceXZ * new Vector2(c, s));
     }
 
     public void SetCameraViaYaw(float yaw)
@@ -61,6 +68,6 @@ internal class CustomCamera
     public void Translate(Vector3 delta)
     {
         Camera += delta;
-        TargetXZ += delta.XZ();
+        SetTargetXZ(TargetXZ + delta.XZ());
     }
 }

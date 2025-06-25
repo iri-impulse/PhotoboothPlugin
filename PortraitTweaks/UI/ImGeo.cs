@@ -283,6 +283,17 @@ public static partial class ImGeo
         GetActiveDrawList().AddRectFilled(ViewToScreen(p_min), ViewToScreen(p_max), col, rounding, flags);
     }
 
+    public static void AddQuad(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, uint col, float thickness = 1.0f)
+    {
+        thickness *= ImGuiHelpers.GlobalScale;
+        GetActiveDrawList().AddQuad(ViewToScreen(p1), ViewToScreen(p2), ViewToScreen(p3), ViewToScreen(p4), col, thickness);
+    }
+
+    public static void AddQuadFilled(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, uint col)
+    {
+        GetActiveDrawList().AddQuadFilled(ViewToScreen(p1), ViewToScreen(p2), ViewToScreen(p3), ViewToScreen(p4), col);
+    }
+
     public static void AddTriangle(Vector2 p1, Vector2 p2, Vector2 p3, uint col, float thickness = 1.0f)
     {
         thickness *= ImGuiHelpers.GlobalScale;

@@ -85,10 +85,6 @@ internal class CameraController
     // a legal range.
     public float Distance => Builtin.Distance;
 
-    // Distance from the camera to the pivot point in the XZ plane. Useful for
-    // bird's eye view controls.
-    public float DistanceXZ => MathF.Sqrt(Camera.X * Camera.X + Camera.Z * Camera.Z);
-
     // The "zoom factor" from 0 to 200 controlled by the zoom slider in the UI.
     public byte Zoom => Builtin.Zoom;
 
@@ -169,18 +165,36 @@ internal class CameraController
         Custom.Translate(displacement);
     }
 
-    // Moves the camera to a place with a given projection in the XZ plane,
-    // by setting the camera yaw and distance.
-    public void SetCameraPositionXZ(Vector2 cameraXZ)
+    /// <summary>
+    /// Moves the camera towards a specified position, reaching it exactly if
+    /// preserveDistance is false or coming as close as possible if true.
+    /// </summary>
+    public void SetCameraPositionXZ(Vector2 cameraXZ, bool preserveDistance = false)
     {
+        if (preserveDistance)
+        {
+            var distance = Vector2.Distance(TargetXZ, Custom.CameraXZ);
+            cameraXZ = new Collision.Circle(TargetXZ, distance).Closest(cameraXZ);
+        }
+
         var camera = new Vector3(cameraXZ.X, Camera.Y, cameraXZ.Y);
         Custom.SetCamera(camera);
         RecomputeBuiltin(true);
         RecomputeCustom();
     }
 
-    public void SetTargetPositionXZ(Vector2 targetXZ)
+    /// <summary>
+    /// Moves the target towards a specified position, reaching it exactly if
+    /// preserveDistance is false or coming as close as possible if true.
+    /// </summary>
+    public void SetTargetPositionXZ(Vector2 targetXZ, bool preserveDistance = false)
     {
+        if (preserveDistance)
+        {
+            var distance = Vector2.Distance(TargetXZ, Custom.CameraXZ);
+            targetXZ = new Collision.Circle(Custom.CameraXZ, distance).Closest(targetXZ);
+        }
+
         Custom.SetTargetXZ(targetXZ);
         RecomputeBuiltin();
         RecomputeCustom();
@@ -205,24 +219,35 @@ internal class CameraController
         RecomputeCustom();
     }
 
-    public void SetPivotPositionXZ(Vector2 pivotXZ, bool preserveCharacterAngle = false)
+    public void SetPivotPositionXZ(Vector2 pivotXZ)
     {
         var newPivot = new Vector3(pivotXZ.X, Pivot.Y, pivotXZ.Y);
         newPivot = Vector3.Clamp(newPivot, PivotMin, PivotMax);
+        Builtin.SetPivot(newPivot);
+    }
 
-        if (preserveCharacterAngle)
+    public void RotatePivotPositionXZ(Vector2 pivotXZ)
+    {
+        var oldAngle = (Subject.XZ() - Pivot.XZ()).Atan2();
+        var newAngle = (Subject.XZ() - pivotXZ).Atan2();
+        var theta = newAngle - oldAngle;
+        var rotation = Matrix3x2.CreateRotation(theta, Subject.XZ());
+
+        var newPivotXZ = Vector2.Transform(Pivot.XZ(), rotation);
+        if (!PivotBoxXZ.Contains(newPivotXZ))
         {
-            var oldAngle = -(Pivot.XZ() - Subject.XZ()).Atan2();
-            var newAngle = -(newPivot.XZ() - Subject.XZ()).Atan2();
-            var newDirection = SphereLL.FromRadians(
-                Direction.LatRadians,
-                Direction.LonRadians + newAngle - oldAngle
-            );
-
-            Builtin.SetDirection(newDirection);
+            return;
         }
 
-        Builtin.SetPivot(newPivot);
+        var newCameraXZ = Vector2.Transform(Custom.CameraXZ, rotation);
+        var newTargetXZ = Vector2.Transform(TargetXZ, rotation);
+
+        var newCamera = new Vector3(newCameraXZ.X, Camera.Y, newCameraXZ.Y);
+        Custom.SetCamera(newCamera);
+        Custom.SetTargetXZ(newTargetXZ);
+
+        RecomputeBuiltin();
+        RecomputeCustom();
     }
 
     public void SetPivotPositionY(float pivotY)

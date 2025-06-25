@@ -22,7 +22,8 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
     private static readonly ushort _Part = 6;
 
     public override string? Help { get; } =
-        "Left click: drag a handle to rotate the camera (red) or pivot point (white).\n"
+        "Left click: drag a handle to rotate the camera (red) or target point (green).\n"
+        + "Hold shift when dragging to lock distance and only apply rotation."
         + "Right click: drag anywhere to slide camera and pivot together.\n"
         + "Mousewheel: adjust camera distance.";
 
@@ -143,14 +144,18 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         var changed = false;
 
         var subject = _camera.Subject;
-        var cameraXZ = new Vector2(_camera.Camera.X, _camera.Camera.Z);
-        var pivotXZ = new Vector2(_camera.Pivot.X, _camera.Pivot.Z);
-        var subjectXZ = new Vector2(subject.X, subject.Z);
+        var cameraXZ = _camera.Camera.XZ();
+        var pivotXZ = _camera.Pivot.XZ();
+        var subjectXZ = subject.XZ();
+        var targetXZ = _camera.TargetXZ;
 
         using var canvas = new CameraCanvas();
 
+        var shiftHeld = ImGui.IsKeyDown(ImGuiKey.ModShift);
+
         // Camera view wedge.
         canvas.AddCameraWedge(cameraXZ, _camera.Direction.LonRadians, _camera.ZoomRadians);
+        canvas.AddCameraApparatus(cameraXZ, pivotXZ, targetXZ);
 
         // Draggable sun for light angle.
         var lightDirection = _portrait.GetDirectionalLightDirection();
@@ -164,15 +169,15 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         canvas.AddPlayerMarker(subjectXZ, e.CharacterDirection());
 
         // Camera target handle.
-        var targetXZ = _camera.TargetXZ;
+
         var newTargetXZ = targetXZ;
         if (canvas.DragTarget(ref newTargetXZ))
         {
-            _camera.SetTargetPositionXZ(newTargetXZ);
+            _camera.SetTargetPositionXZ(newTargetXZ, shiftHeld);
             changed = true;
         }
 
-        if (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive())
+        if (shiftHeld && (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive()))
         {
             canvas.AddOrbitIndicator(targetXZ, cameraXZ);
         }
@@ -181,11 +186,20 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         var newPivotXZ = pivotXZ;
         if (canvas.DragPivot(ref newPivotXZ))
         {
-            _camera.SetPivotPositionXZ(newPivotXZ, true);
+            if (shiftHeld)
+            {
+                _camera.RotatePivotPositionXZ(newPivotXZ);
+            }
+            else
+            {
+                var deltaXZ = newPivotXZ - pivotXZ;
+                _camera.Translate(new(deltaXZ.X, 0, deltaXZ.Y));
+            }
+
             changed = true;
         }
 
-        if (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive())
+        if (shiftHeld && (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive()))
         {
             canvas.AddOrbitIndicator(pivotXZ, subjectXZ);
         }
@@ -194,11 +208,11 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         var newCameraXZ = cameraXZ;
         if (canvas.DragCamera(ref newCameraXZ))
         {
-            _camera.SetCameraPositionXZ(newCameraXZ);
+            _camera.SetCameraPositionXZ(newCameraXZ, shiftHeld);
             changed = true;
         }
 
-        if (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive())
+        if (shiftHeld && (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive()))
         {
             canvas.AddOrbitIndicator(cameraXZ, targetXZ);
         }

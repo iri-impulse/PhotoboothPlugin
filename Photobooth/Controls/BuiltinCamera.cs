@@ -16,7 +16,6 @@ namespace Photobooth.Controls;
 internal class BuiltinCamera
 {
     public byte Zoom { get; private set; } = ZoomMin;
-    public float Twist { get; private set; } = 0;
     public Vector3 Pivot { get; private set; } = Vector3.Zero;
     public float Distance { get; private set; } = DistanceMin;
     public SphereLL Direction { get; private set; } = SphereLL.FromDegrees(0, 0);

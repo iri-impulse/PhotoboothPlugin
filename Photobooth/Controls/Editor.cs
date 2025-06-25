@@ -213,4 +213,33 @@ public unsafe ref struct Editor
         Free = 1,
         Camera = 2,
     }
+
+    public readonly void UpdateUI(in ExportedPortraitData data)
+    {
+        var addon = (AddonBannerEditor*)Plugin.GameGui.GetAddonByName("BannerEditor");
+        if (addon == null)
+        {
+            return;
+        }
+
+        addon->ImageRotation->SetValue(data.ImageRotation);
+        addon->CameraZoomSlider->SetValue(data.CameraZoom);
+
+        addon->AmbientLightingBrightnessSlider->SetValue(data.AmbientLightingBrightness);
+        addon->AmbientLightingColorRedSlider->SetValue(data.AmbientLightingColorRed);
+        addon->AmbientLightingColorGreenSlider->SetValue(data.AmbientLightingColorGreen);
+        addon->AmbientLightingColorBlueSlider->SetValue(data.AmbientLightingColorBlue);
+
+        addon->DirectionalLightingBrightnessSlider->SetValue(data.DirectionalLightingBrightness);
+        addon->DirectionalLightingColorRedSlider->SetValue(data.DirectionalLightingColorRed);
+        addon->DirectionalLightingColorGreenSlider->SetValue(data.DirectionalLightingColorGreen);
+        addon->DirectionalLightingColorBlueSlider->SetValue(data.DirectionalLightingColorBlue);
+
+        addon->DirectionalLightingHorizontalAngleSlider->SetValue(
+            data.DirectionalLightingHorizontalAngle
+        );
+        addon->DirectionalLightingVerticalAngleSlider->SetValue(
+            data.DirectionalLightingVerticalAngle
+        );
+    }
 }

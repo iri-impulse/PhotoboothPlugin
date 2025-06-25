@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using System.Threading.Channels;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
@@ -75,19 +76,9 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         using (ImRaii.Group())
         {
             var buttonWidth = 0.3f * entireWidth;
-            if (ImGui.Button("Face Character", new Vector2(buttonWidth, 0)))
-            {
-                _camera.FaceSubject();
-                changed = true;
-            }
-
-            ImGui.Checkbox("Track Motion", ref _followCharacter);
-            if (ImGui.IsItemHovered())
-            {
-                ImGui.SetTooltip(
-                    "Continuously adjust the camera as the character moves\nUseful for PVP limit breaks and other poses with extreme movement."
-                );
-            }
+            changed |= ResetRotationButton(new Vector2(buttonWidth, 0));
+            changed |= FaceCharacterButton(new Vector2(buttonWidth, 0));
+            changed |= TrackMotionCheckbox();
         }
 
         ImGui.SameLine();
@@ -97,45 +88,101 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         {
             using var _ = ImRaii.ItemWidth(-float.Epsilon);
 
-            // Height slider.
-            var hIcon = FontAwesomeIcon.RulerVertical;
-            var pivotY = _camera.Pivot.Y;
-            if (
-                ImPT.IconSliderFloat(
-                    "##height",
-                    hIcon,
-                    ref pivotY,
-                    CameraConsts.PivotYMin,
-                    CameraConsts.PivotYMax,
-                    "Height: %.1f",
-                    "Height"
-                )
-            )
-            {
-                _camera.SetPivotPositionY(pivotY);
-                changed = true;
-            }
-
-            // Pitch slider.
-            var pIcon = FontAwesomeIcon.ArrowsUpDown;
-            var pitch = -_camera.Direction.LatDegrees;
-            if (
-                ImPT.IconSliderFloat(
-                    "##pitch",
-                    pIcon,
-                    ref pitch,
-                    -CameraConsts.PitchMax,
-                    -CameraConsts.PitchMin,
-                    "Angle: %+.0f°",
-                    "Pitch up/down"
-                )
-            )
-            {
-                _camera.SetCameraPitchRadians(-MathF.Tau * pitch / 360);
-                changed = true;
-            }
+            changed |= ImageRotationSlider();
+            changed |= PivotHeightSlider();
+            changed |= CameraPitchSlider();
         }
 
+        return changed;
+    }
+
+    private bool ResetRotationButton(Vector2 size)
+    {
+        var pressed = ImGui.Button("Reset Rotation", size);
+        if (pressed)
+        {
+            _portrait.SetImageRotation(0);
+        }
+
+        return pressed;
+    }
+
+    private bool FaceCharacterButton(Vector2 size)
+    {
+        var pressed = ImGui.Button("Face Character", size);
+        if (pressed)
+        {
+            _camera.FaceSubject();
+        }
+        return pressed;
+    }
+
+    private bool TrackMotionCheckbox()
+    {
+        var changed = ImGui.Checkbox("Track Motion", ref _followCharacter);
+        if (ImGui.IsItemHovered())
+        {
+            ImGui.SetTooltip(
+                "Continuously adjust the camera as the character moves\nUseful for PVP limit breaks and other poses with extreme movement."
+            );
+        }
+        return changed;
+    }
+
+    private bool ImageRotationSlider()
+    {
+        var rotation = (int)_portrait.GetImageRotation();
+        var changed = ImPT.IconSliderInt(
+            "##rotation",
+            FontAwesomeIcon.Redo,
+            ref rotation,
+            -CameraConsts.RotationMax,
+            CameraConsts.RotationMax,
+            "Rotation: %+d°",
+            "Image rotation"
+        );
+        if (changed)
+        {
+            _portrait.SetImageRotation((short)rotation);
+        }
+        return changed;
+    }
+
+    private bool PivotHeightSlider()
+    {
+        var pivotY = _camera.Pivot.Y;
+        var changed = ImPT.IconSliderFloat(
+            "##height",
+            FontAwesomeIcon.RulerVertical,
+            ref pivotY,
+            CameraConsts.PivotYMin,
+            CameraConsts.PivotYMax,
+            "Height: %.1f",
+            "Height"
+        );
+        if (changed)
+        {
+            _camera.SetPivotPositionY(pivotY);
+        }
+        return changed;
+    }
+
+    private bool CameraPitchSlider()
+    {
+        var pitch = -_camera.Direction.LatDegrees;
+        var changed = ImPT.IconSliderFloat(
+            "##pitch",
+            FontAwesomeIcon.ArrowsUpDown,
+            ref pitch,
+            -CameraConsts.PitchMax,
+            -CameraConsts.PitchMin,
+            "Angle: %+.0f°",
+            "Pitch angle"
+        );
+        if (changed)
+        {
+            _camera.SetCameraPitchRadians(-MathF.Tau * pitch / 360);
+        }
         return changed;
     }
 

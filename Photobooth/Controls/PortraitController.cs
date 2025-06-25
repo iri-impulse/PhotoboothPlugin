@@ -53,6 +53,7 @@ public class PortraitController : IDisposable
         if (changed)
         {
             e.SetHasChanged(true);
+            e.UpdateUI(in Data);
         }
 
         _progressPinnedLast = _progressPinnedNow;
@@ -316,6 +317,21 @@ public class PortraitController : IDisposable
         Data.CameraTarget.Y = (Half)target.Y;
         Data.CameraTarget.Z = (Half)target.Z;
         _changes |= PortraitChanges.CameraTarget;
+    }
+
+    public short GetImageRotation()
+    {
+        return Data.ImageRotation;
+    }
+
+    public void SetImageRotation(short rotation)
+    {
+        Data.ImageRotation = Math.Clamp(
+            rotation,
+            CameraConsts.RotationMin,
+            CameraConsts.RotationMax
+        );
+        _changes |= PortraitChanges.ImageRotation;
     }
 
     private static byte ClampBrightness(byte brightness)

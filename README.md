@@ -1,4 +1,4 @@
-# PortraitTweaks
+# Photobooth
 
 A Dalamud plugin for FFXIV that provides additional controls when editing a portrait.
 
@@ -11,7 +11,7 @@ A Dalamud plugin for FFXIV that provides additional controls when editing a port
 
 ## Screenshots
 
-![PortraitTweaks main window](/Assets/Example_mainwindow.png)
+![Photobooth main window](/Assets/Example_mainwindow.png)
 
 ## FAQ
 

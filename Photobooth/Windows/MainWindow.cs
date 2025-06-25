@@ -45,6 +45,16 @@ public class MainWindow : Window, IDisposable
             MaximumSize = new(600, float.MaxValue),
         };
 
+        var settingsButton = new TitleBarButton()
+        {
+            Icon = FontAwesomeIcon.Cog,
+            Click = (button) =>
+            {
+                _plugin.ToggleConfigUI();
+            },
+        };
+        TitleBarButtons = [settingsButton];
+
         _animationPanel = new AnimationPanel(_portrait);
         _cameraPanel = new CameraPanel(_portrait, _camera);
         _facingPanel = new FacingPanel(_portrait);

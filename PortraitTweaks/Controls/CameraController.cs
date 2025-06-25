@@ -146,6 +146,11 @@ internal class CameraController
         portrait->ApplyCameraPositions();
     }
 
+    public void Reset()
+    {
+        Subject = Vector3.Zero;
+    }
+
     public void SetZoom(byte zoom)
     {
         Builtin.SetZoom(zoom);

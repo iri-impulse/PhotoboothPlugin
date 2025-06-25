@@ -1,34 +1,35 @@
 using System;
 using System.Numerics;
-using Dalamud.Interface;
-using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using Dalamud.Utility.Numerics;
 using ImGuiNET;
 using PortraitTweaks.Maths;
 
-namespace PortraitTweaks.UI.Stateless;
+namespace PortraitTweaks.UI.Canvas;
 
-public static partial class ImPT
+public static class FacingCanvas
 {
+    private static readonly float _AspectRatio = 0.8f;
+
+    private static readonly uint _BorderColor = 0xD0FFFFFF;
+    private static readonly uint _DisabledColor = 0x80FFFFFF;
+    private static readonly uint _TextColor = 0x80FFFFFF;
+
+    private static readonly float _Padding = 12f;
+    private static readonly float _HandleSize = 10f;
+
     /// <summary>
     /// A widget for picking a "half-direction", that is, a point on a
     /// front-facing hemisphere, in terms of latitude and longitude.
     /// </summary>
-    public static bool HalfDirection(
+    public static bool PickFacing(
         string label,
         ref SphereLL dir,
         Vector2 topleft,
         Vector2 bottomright,
-        float aspectRatio = 1f,
         string? disabledReason = null
     )
     {
-        var borderColor = 0xD0FFFFFF;
-        var disabledColor = 0x80FFFFFF;
-        var textColor = 0x80FFFFFF;
-
         var xy = new Vector2(dir.LonDegrees, dir.LatDegrees);
 
         using var id = ImRaii.PushId(label);
@@ -40,37 +41,37 @@ public static partial class ImPT
             ImGui.Text(label);
         }
 
-        var padPx = 12f;
-        var handlePx = 10f;
-
         var width = ImGui.CalcItemWidth();
-        var screenSize = new Vector2(width, MathF.Ceiling(aspectRatio * width));
+        var screenSize = new Vector2(width, MathF.Ceiling(_AspectRatio * width));
         var viewSize = bottomright - topleft;
-        var pad = padPx * viewSize / screenSize * ImGuiHelpers.GlobalScale;
+        var pad = _Padding * viewSize / screenSize * ImGuiHelpers.GlobalScale;
+
         ImGeo.BeginViewport("viewport", topleft - pad, bottomright + pad, screenSize);
 
-        // Bounding box for visibility.
         var pixels = ImGeo.GetPixelSize();
-        ImGeo.AddRect(topleft - pad, bottomright + pad, borderColor);
+        var handlePx = _HandleSize * pixels.X;
+
+        // Bounding box for visibility.
+        ImGeo.AddRect(topleft - pad, bottomright + pad, _BorderColor);
 
         // Display the numerical values.
         var textSize = ImGeo.CalcTextSize("H: -XXX.0° ");
         var textPos = new Vector2(topleft.X + pad.X, bottomright.Y - textSize.Y / 2);
-        ImGeo.AddText(textPos, textColor, $"H: {xy.X:F1}°");
-        ImGeo.AddText(textPos + new Vector2(textSize.X, 0), textColor, $"V: {xy.Y:F1}°");
+        ImGeo.AddText(textPos, _TextColor, $"H: {xy.X:F1}°");
+        ImGeo.AddText(textPos + new Vector2(textSize.X, 0), _TextColor, $"V: {xy.Y:F1}°");
 
         // Do a drag handle for the direction.
         var changed = false;
         if (disabledReason is null)
         {
-            changed |= ImGeo.DragHandleCircle("handle", ref xy, handlePx * pixels.X);
+            changed |= ImGeo.DragHandleCircle("handle", ref xy, handlePx);
         }
         else
         {
-            ImGeo.AddCircle(xy, handlePx * pixels.X, disabledColor);
+            ImGeo.AddCircle(xy, handlePx, _DisabledColor);
             var disabledSize = ImGeo.CalcTextSize(disabledReason);
             var midTop = new Vector2(topleft.X + (viewSize.X - disabledSize.X) / 2, topleft.Y);
-            ImGeo.AddText(midTop, disabledColor, disabledReason);
+            ImGeo.AddText(midTop, _DisabledColor, disabledReason);
         }
 
         // Also let double click set the direction.

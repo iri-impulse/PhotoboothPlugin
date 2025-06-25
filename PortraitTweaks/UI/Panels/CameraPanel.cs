@@ -45,8 +45,12 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         var newSubject = e.CharacterPosition(_Part);
         if (_portrait.IsAnimationStable)
         {
-            _camera.SetSubjectPosition(newSubject, _followCharacter);
-            changed |= _followCharacter;
+            _camera.SetSubjectPosition(newSubject);
+            if (_followCharacter)
+            {
+                _camera.FaceSubject();
+                changed = true;
+            }
         }
 
         // Camera canvas area.
@@ -107,7 +111,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
                 )
             )
             {
-                _camera.SetPivotPositionY(pivotY, false);
+                _camera.SetPivotPositionY(pivotY);
                 changed = true;
             }
 

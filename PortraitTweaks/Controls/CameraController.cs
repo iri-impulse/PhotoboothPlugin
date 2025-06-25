@@ -117,12 +117,7 @@ internal class CameraController
         Builtin.SetZoom(portrait->CameraZoom);
         Builtin.SetDistance(portrait->CameraDistance * Scale);
 
-        //RecomputeCustom();
-
-        Custom.SetCamera(Builtin.Camera);
-        Custom.SetPitch(Builtin.Direction.LatRadians);
-        //var line = new Collision.Line(Builtin.Camera.XZ(), Builtin.Pivot.XZ());
-        Custom.SetTargetViaYaw(Builtin.Direction.LonRadians);
+        RecomputeCustom();
     }
 
     public unsafe void Save(Editor e)
@@ -156,11 +151,6 @@ internal class CameraController
         Builtin.SetZoom(zoom);
     }
 
-    public void SetCameraDistance(float distance)
-    {
-        Builtin.SetDistance(distance);
-    }
-
     public void AdjustCameraDistance(float delta)
     {
         // As with Client::UI::Misc::CharaViewPortrait.SetCameraDistance, but
@@ -177,19 +167,6 @@ internal class CameraController
     {
         var displacement = Builtin.TryTranslate(delta);
         Custom.Translate(displacement);
-    }
-
-    public void SetCameraPosition(Vector3 newCamera, bool preserveCameraDistance = false)
-    {
-        var newDistance = preserveCameraDistance ? Distance : (newCamera - Pivot).Length();
-        newDistance = Math.Clamp(newDistance, DistanceMin, DistanceMax);
-
-        var newDirection = SphereLL.FromDirection(newCamera - Pivot);
-        var latitude = Math.Clamp(newDirection.LatRadians, PitchMin, PitchMax);
-        newDirection = SphereLL.FromRadians(latitude, newDirection.LonRadians);
-
-        Builtin.SetDirection(newDirection);
-        Builtin.SetDistance(newDistance);
     }
 
     // Moves the camera to a place with a given projection in the XZ plane,
@@ -209,46 +186,23 @@ internal class CameraController
         RecomputeCustom();
     }
 
-    public void SetSubjectPosition(Vector3 newSubject, bool preserveCharacterAngle = false)
+    public void SetSubjectPosition(Vector3 newSubject)
     {
-        if (preserveCharacterAngle)
-        {
-            var subjectOld = SphereLL.FromDirection(Pivot - Subject);
-            var subjectNew = SphereLL.FromDirection(Pivot - newSubject);
-            var newDirection = SphereLL.FromRadians(
-                Direction.LatRadians + subjectNew.LatRadians - subjectOld.LatRadians,
-                Direction.LonRadians + subjectNew.LonRadians - subjectOld.LonRadians
-            );
-
-            Builtin.SetDirection(newDirection);
-        }
-
         Subject = newSubject;
     }
 
-    // Move the pivot onto the subject (or as close as possible), and face the
-    // camera at the subject.
+    /// <summary>
+    /// Move the target onto the subject (or as close as possible), move the
+    /// camera away from the target if it's too close, and recompute the pivot.
+    /// </summary>
     public void FaceSubject()
     {
-        // New pivot point, corrected to be in bounds.
-        var newPivot = new Vector3(Subject.X, Pivot.Y, Subject.Z);
-
-        SphereLL newDirection;
-        if (PivotBoxXZ.Contains(newPivot.XZ()))
-        {
-            // If the subject is outside the bounds, we want to move the camera
-            // and face the direction between hte pivot and the subject.
-            Builtin.SetPivot(newPivot);
-            newDirection = SphereLL.FromDirection(Pivot - Subject);
-        }
-        else
-        {
-            // Otherwise, we face the current camera onto the pivot.
-            Builtin.SetPivot(newPivot);
-            newDirection = SphereLL.FromDirection(Camera - Pivot);
-        }
-
-        Builtin.SetDirection(newDirection);
+        // Right now we're not adjusting the camera vertical angle. This is
+        // alright because you can adjust it manually, even while camera
+        // following is active, but it's not completely ideal.
+        Custom.SetTargetXZ(Subject.XZ());
+        RecomputeBuiltin(true);
+        RecomputeCustom();
     }
 
     public void SetPivotPositionXZ(Vector2 pivotXZ, bool preserveCharacterAngle = false)
@@ -271,24 +225,24 @@ internal class CameraController
         Builtin.SetPivot(newPivot);
     }
 
-    public void SetPivotPositionY(float pivotY, bool preserveCharacterAngle = false)
+    public void SetPivotPositionY(float pivotY)
     {
         var newPivot = new Vector3(Pivot.X, pivotY, Pivot.Z);
         Builtin.SetPivot(newPivot);
-    }
-
-    public void SetCameraYawRadians(float newYaw)
-    {
-        var newDirection = SphereLL.FromRadians(Direction.LatRadians, newYaw);
-        Builtin.SetDirection(newDirection);
     }
 
     public void SetCameraPitchRadians(float newPitch)
     {
         var newDirection = SphereLL.FromRadians(newPitch, Direction.LonRadians);
         Builtin.SetDirection(newDirection);
+        Custom.SetPitch(newPitch);
     }
 
+    /// <summary>
+    /// Recompute the custom camera position to match the state of the built-in
+    /// camera. The distance between the camera and the target is preserved,
+    /// but the camera position and the direction to the target are updated.
+    /// </summary>
     private void RecomputeCustom()
     {
         Custom.SetCamera(Builtin.Camera);
@@ -296,7 +250,19 @@ internal class CameraController
         Custom.SetTargetViaYaw(Builtin.Direction.LonRadians);
     }
 
-    public void RecomputeBuiltin(bool allowCameraMovement = false)
+    /// <summary>
+    /// Recompute the pivot position based on our custom coordinate system.
+    /// </summary>
+    /// <remarks>
+    /// This is where the magic happens. Our UI works in terms of a camera and
+    /// target position, ignoring the existence of the pivot. To use it as a
+    /// source of truth we want a unidirectional data flow where we come up
+    /// with a pivot position without consulting the built-in camera at all.
+    ///
+    /// The result is a legal built-in camera position that's as close as we
+    /// can manage to the custom camera, but not necessarily identical to it.
+    /// </remarks>
+    private void RecomputeBuiltin(bool allowCameraMovement = false)
     {
         // Move the pivot to the spot in the line of sight closest to the
         // subject, respecting limits of camera distance and position.

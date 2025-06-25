@@ -5,6 +5,7 @@ using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using PortraitTweaks.Controls;
 using PortraitTweaks.Maths;
+using PortraitTweaks.UI.Canvas;
 using PortraitTweaks.UI.Stateless;
 
 namespace PortraitTweaks.UI.Panels;
@@ -137,88 +138,31 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
     {
         var changed = false;
 
-        // Tweakable stuff.
-        var boundaryColor = 0xFFA0A0A0u;
-        var wedgeColor = 0x606060FFu;
-        var characterColor = 0xFF00EEEEu;
-        var cameraColor = 0xFF8080FFu;
-        var pivotColor = 0xFFE0E0E0u;
-        var targetColor = 0xFF00FF00u;
-        var sunColor = 0xFF00EEEEu;
-        var sunActiveColor = 0xFF44FFFFu;
-
-        var handleSize = 10f;
-        var playerSize = 10f;
-        var sunSize = 8f;
-        var wedgeLen = 300f;
-        var lightRadius = 230f;
-
-        var maxD = CameraConsts.DistanceMax;
-        var min = CameraConsts.PivotMin;
-        var max = CameraConsts.PivotMax;
-
-        // Dimensions of the camera box, which other elements are relative to.
-        var xSpan = max.X - min.X + 2 * maxD;
-        var zSpan = max.Z - min.Z + 2 * maxD;
-
-        // Draw and respond to controls.
-        ImGui.SetNextItemWidth(-float.Epsilon);
-        var w = ImGui.CalcItemWidth();
-        var h = w * zSpan / xSpan;
-        ImGeo.BeginCanvas(
-            "##CameraViewport",
-            new Vector2(min.X - maxD, min.Z - maxD),
-            new Vector2(max.X + maxD, max.Z + maxD),
-            new Vector2(w, w * zSpan / xSpan)
-        );
-        var pixels = ImGeo.GetPixelSize().X;
-
         var subject = _camera.Subject;
         var cameraXZ = new Vector2(_camera.Camera.X, _camera.Camera.Z);
         var pivotXZ = new Vector2(_camera.Pivot.X, _camera.Pivot.Z);
         var subjectXZ = new Vector2(subject.X, subject.Z);
 
-        // Boundary area for camera pivot.
-        ImGeo.AddRect(new Vector2(min.X, min.Z), new Vector2(max.X, max.Z), boundaryColor);
+        using var canvas = new CameraCanvas();
 
-        // Camera wedge.
-        var theta = -MathF.PI / 2 - _camera.Direction.LonRadians;
-        var phi = _camera.ZoomRadians / 2;
+        // Camera view wedge.
+        canvas.AddCameraWedge(cameraXZ, _camera.Direction.LonRadians, _camera.ZoomRadians);
 
-        ImGeo.PathLineTo(cameraXZ);
-        ImGeo.PathClear();
-        ImGeo.PathArcTo(cameraXZ, wedgeLen, theta - phi, theta + phi);
-        ImGeo.PathLineTo(cameraXZ);
-        ImGeo.PathFillConvex(wedgeColor);
-
-        // Light indicator.
+        // Draggable sun for light angle.
         var lightDirection = _portrait.GetDirectionalLightDirection();
-        var lightAngle = -lightDirection.LonRadians + MathF.PI / 2;
-        var lightPos = new Vector2(
-            MathF.Cos(lightAngle) * lightRadius,
-            MathF.Sin(lightAngle) * lightRadius
-        );
-        var newLightPos = lightPos;
-        if (ImGeo.DragHandleCircle("##LightPosition", ref newLightPos, handleSize * pixels, 0))
+        if (canvas.DragSun(ref lightDirection))
         {
-            var newAngle = -(MathF.Atan2(newLightPos.Y, newLightPos.X) - MathF.PI / 2);
-            var newDirection = SphereLL.FromRadians(lightDirection.LatRadians, newAngle);
-            _portrait.SetDirectionalLightDirection(newDirection);
+            _portrait.SetDirectionalLightDirection(lightDirection);
             changed = true;
         }
-        var color = ImGeo.IsHandleHovered() || ImGeo.IsHandleActive() ? sunActiveColor : sunColor;
-        AddLightMarker(lightPos, lightAngle, sunSize * pixels, color);
 
         // Character center indicator.
-        AddPlayerMarker(subjectXZ, e.CharacterDirection(), playerSize * pixels, characterColor);
-
-        // Handles.
-        var handlePixels = handleSize * pixels;
+        canvas.AddPlayerMarker(subjectXZ, e.CharacterDirection());
 
         // Camera target handle.
         var targetXZ = _camera.TargetXZ;
         var newTargetXZ = targetXZ;
-        if (ImGeo.DragHandleCircle("##CameraTarget", ref newTargetXZ, handlePixels, targetColor))
+        if (canvas.DragTarget(ref newTargetXZ))
         {
             _camera.SetTargetPositionXZ(newTargetXZ);
             changed = true;
@@ -226,12 +170,12 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
 
         if (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive())
         {
-            ImGeo.AddCircle(cameraXZ, Vector2.Distance(cameraXZ, targetXZ), targetColor);
+            canvas.AddOrbitIndicator(targetXZ, cameraXZ);
         }
 
         // Camera pivot handle.
         var newPivotXZ = pivotXZ;
-        if (ImGeo.DragHandleCircle("##CameraPivot", ref newPivotXZ, handlePixels, pivotColor))
+        if (canvas.DragPivot(ref newPivotXZ))
         {
             _camera.SetPivotPositionXZ(newPivotXZ, true);
             changed = true;
@@ -239,12 +183,12 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
 
         if (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive())
         {
-            ImGeo.AddCircle(subjectXZ, Vector2.Distance(pivotXZ, subjectXZ), pivotColor);
+            canvas.AddOrbitIndicator(pivotXZ, subjectXZ);
         }
 
         // Camera position handle.
         var newCameraXZ = cameraXZ;
-        if (ImGeo.DragHandleCircle("##CameraPosition", ref newCameraXZ, handlePixels, cameraColor))
+        if (canvas.DragCamera(ref newCameraXZ))
         {
             _camera.SetCameraPositionXZ(newCameraXZ);
             changed = true;
@@ -252,7 +196,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
 
         if (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive())
         {
-            ImGeo.AddCircle(targetXZ, Vector2.Distance(cameraXZ, targetXZ), cameraColor);
+            canvas.AddOrbitIndicator(cameraXZ, targetXZ);
         }
 
         // Right click pan.
@@ -283,35 +227,6 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
             }
         }
 
-        ImGeo.EndCanvas();
-
         return changed;
-    }
-
-    private static void AddPlayerMarker(Vector2 position, float angle, float size, uint col)
-    {
-        var (s, c) = MathF.SinCos(angle);
-        var front = new Vector2(c, s) * size;
-        var left = new Vector2(-s, c) * 0.8f * size - front;
-        var right = new Vector2(s, -c) * 0.8f * size - front;
-
-        ImGeo.AddTriangleFilled(position + front, position + left, position + right, col);
-    }
-
-    private static void AddLightMarker(Vector2 pos, float angle, float size, uint col)
-    {
-        var spikiness = 1.5f;
-
-        ImGeo.AddCircleFilled(pos, size, col);
-        for (var i = 0; i < 8; i++)
-        {
-            // Draw a triangle pointing outward.
-            var theta = angle + MathF.Tau * i / 8;
-            var (s, c) = MathF.SinCos(theta);
-            var front = new Vector2(c, s) * size * spikiness;
-            var left = new Vector2(-s, c) * size;
-            var right = new Vector2(s, -c) * size;
-            ImGeo.AddTriangleFilled(pos + front, pos + left, pos + right, col);
-        }
     }
 }

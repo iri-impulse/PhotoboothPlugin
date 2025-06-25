@@ -22,9 +22,9 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
     private static readonly ushort _Part = 6;
 
     public override string? Help { get; } =
-        "Left click: drag a handle to rotate the camera (red) or target point (green).\n"
-        + "Hold shift when dragging to lock distance and only apply rotation."
-        + "Right click: drag anywhere to slide camera and pivot together.\n"
+        "Left click: drag a handle to move the camera (circle), target (arrow), or pivot (diamond).\n"
+        + "Hold shift when dragging to lock distance and only apply rotation.\n"
+        + "Right click: drag anywhere to slide the whole camera setup around.\n"
         + "Mousewheel: adjust camera distance.";
 
     public override void Reset()
@@ -107,7 +107,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
                     ref pivotY,
                     CameraConsts.PivotYMin,
                     CameraConsts.PivotYMax,
-                    "%.1f",
+                    "Height: %.1f",
                     "Height"
                 )
             )
@@ -126,7 +126,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
                     ref pitch,
                     -CameraConsts.PitchMax,
                     -CameraConsts.PitchMin,
-                    "%.1f",
+                    "Angle: %+.0f°",
                     "Pitch up/down"
                 )
             )

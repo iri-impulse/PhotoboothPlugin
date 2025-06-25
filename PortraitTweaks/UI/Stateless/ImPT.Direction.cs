@@ -1,9 +1,9 @@
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
-using PortraitTweaks.Data;
+using PortraitTweaks.Maths;
 
-namespace PortraitTweaks.UI;
+namespace PortraitTweaks.UI.Stateless;
 
 public static partial class ImPT
 {

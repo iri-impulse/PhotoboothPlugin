@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using Dalamud.Interface.Utility;
 using ImGuiNET;
 
 namespace PortraitTweaks.UI;
@@ -27,7 +28,23 @@ public static partial class ImGeo
         return ImGui.GetWindowDrawList();
     }
 
-    public static void BeginViewport(string label, Vector2 min_xy, Vector2 max_xy, Vector2 size)
+    /// <summary>
+    /// A RAII wrapper for an active canvas viewport.
+    /// </summary>
+    public class Canvas : IDisposable
+    {
+        public Canvas(string label, Vector2 min_xy, Vector2 max_xy, Vector2 size)
+        {
+            BeginCanvas(label, min_xy, max_xy, size);
+        }
+
+        public void Dispose()
+        {
+            EndCanvas();
+        }
+    }
+
+    public static void BeginCanvas(string label, Vector2 min_xy, Vector2 max_xy, Vector2 size)
     {
         ImGui.InvisibleButton(label, size, ImGuiButtonFlags.MouseButtonLeft);
         var top_left = ImGui.GetItemRectMin();
@@ -54,7 +71,7 @@ public static partial class ImGeo
         }
     }
 
-    public static void EndViewport()
+    public static void EndCanvas()
     {
         ImGui.PopID();
         ImGui.PopClipRect();
@@ -115,6 +132,13 @@ public static partial class ImGeo
         return _CurentView.ScaleToScreen(view);
     }
 
+    public static Vector2 GetPixelSize()
+    {
+        if (_CurentView == null)
+            throw new InvalidOperationException("No viewport is currently active.");
+        return _CurentView.ScaleToView(Vector2.One) * ImGuiHelpers.GlobalScale;
+    }
+
     //
     // Draggable handles, which work similar to ImGui items or 2D sliders.
     //
@@ -122,7 +146,9 @@ public static partial class ImGeo
     // General handle inspection functions, by analogy with ImGui `IsItemXYZ`.
     public static bool IsHandleHovered(ImGuiHoveredFlags flags = ImGuiHoveredFlags.None)
     {
-        return ImGui.IsItemHovered(flags) && _CurrentHandle.HitTest(MouseViewPos());
+        return _ActiveHandleId == 0
+            && ImGui.IsItemHovered(flags)
+            && _CurrentHandle.HitTest(MouseViewPos());
     }
 
     public static bool IsHandleClicked(ImGuiMouseButton button = ImGuiMouseButton.Left)
@@ -242,11 +268,13 @@ public static partial class ImGeo
 
     public static void AddLine(Vector2 p1, Vector2 p2, uint col, float thickness = 1.0f)
     {
+        thickness *= ImGuiHelpers.GlobalScale;
         GetActiveDrawList().AddLine(ViewToScreen(p1), ViewToScreen(p2), col, thickness);
     }
 
     public static void AddRect(Vector2 p_min, Vector2 p_max, uint col, float rounding = 0.0f, ImDrawFlags flags = 0, float thickness = 1.0f)
     {
+        thickness *= ImGuiHelpers.GlobalScale;
         GetActiveDrawList().AddRect(ViewToScreen(p_min), ViewToScreen(p_max), col, rounding, flags, thickness);
     }
 
@@ -255,8 +283,20 @@ public static partial class ImGeo
         GetActiveDrawList().AddRectFilled(ViewToScreen(p_min), ViewToScreen(p_max), col, rounding, flags);
     }
 
+    public static void AddQuad(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, uint col, float thickness = 1.0f)
+    {
+        thickness *= ImGuiHelpers.GlobalScale;
+        GetActiveDrawList().AddQuad(ViewToScreen(p1), ViewToScreen(p2), ViewToScreen(p3), ViewToScreen(p4), col, thickness);
+    }
+
+    public static void AddQuadFilled(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, uint col)
+    {
+        GetActiveDrawList().AddQuadFilled(ViewToScreen(p1), ViewToScreen(p2), ViewToScreen(p3), ViewToScreen(p4), col);
+    }
+
     public static void AddTriangle(Vector2 p1, Vector2 p2, Vector2 p3, uint col, float thickness = 1.0f)
     {
+        thickness *= ImGuiHelpers.GlobalScale;
         GetActiveDrawList().AddTriangle(ViewToScreen(p1), ViewToScreen(p2), ViewToScreen(p3), col, thickness);
     }
 
@@ -267,6 +307,7 @@ public static partial class ImGeo
 
     public static void AddCircle(Vector2 center, float radius, uint col, int num_segments = 0, float thickness = 1.0f)
     {
+        thickness *= ImGuiHelpers.GlobalScale;
         GetActiveDrawList().AddCircle(ViewToScreen(center), radius * ScaleToScreen(Vector2.One).X, col, num_segments, thickness);
     }
 

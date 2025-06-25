@@ -4,8 +4,8 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
-using PortraitTweaks.Data;
 using PortraitTweaks.GameExt;
+using PortraitTweaks.Maths;
 
 namespace PortraitTweaks.Controls;
 
@@ -257,8 +257,11 @@ public class PortraitController : IDisposable
 
     public void SetDirectionalLightDirection(SphereLL d)
     {
-        Data.DirectionalLightingVerticalAngle = (short)MathF.Floor(d.LatDegrees);
-        Data.DirectionalLightingHorizontalAngle = (short)MathF.Floor(d.LonDegrees);
+        // Portraits want angles in [-180, 180] degrees.
+        var lat = d.LatDegrees;
+        var lon = (d.LonDegrees % 360 + 180) % 360 - 180;
+        Data.DirectionalLightingVerticalAngle = (short)MathF.Floor(lat);
+        Data.DirectionalLightingHorizontalAngle = (short)MathF.Floor(lon);
         _changes |= PortraitChanges.DirectionalLightDirection;
     }
 
@@ -277,7 +280,7 @@ public class PortraitController : IDisposable
         Data.AmbientLightingColorRed = color.R;
         Data.AmbientLightingColorGreen = color.G;
         Data.AmbientLightingColorBlue = color.B;
-        Data.AmbientLightingBrightness = color.A;
+        Data.AmbientLightingBrightness = ClampBrightness(color.A);
         _changes |= PortraitChanges.AmbientLightColor;
     }
 
@@ -296,7 +299,7 @@ public class PortraitController : IDisposable
         Data.DirectionalLightingColorRed = color.R;
         Data.DirectionalLightingColorGreen = color.G;
         Data.DirectionalLightingColorBlue = color.B;
-        Data.DirectionalLightingBrightness = color.A;
+        Data.DirectionalLightingBrightness = ClampBrightness(color.A);
         _changes |= PortraitChanges.DirectionalLightColor;
     }
 
@@ -315,6 +318,12 @@ public class PortraitController : IDisposable
         Data.CameraTarget.Y = (Half)target.Y;
         Data.CameraTarget.Z = (Half)target.Z;
         _changes |= PortraitChanges.CameraTarget;
+    }
+
+    private static byte ClampBrightness(byte brightness)
+    {
+        // The dimmest you can make either light source is 20.
+        return Math.Clamp(brightness, (byte)20, (byte)255);
     }
 
     // LB-type (non-emote) animations need some babying. They only

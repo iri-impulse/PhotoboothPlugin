@@ -165,7 +165,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         ImGui.SetNextItemWidth(-float.Epsilon);
         var w = ImGui.CalcItemWidth();
         var h = w * zSpan / xSpan;
-        ImGeo.BeginViewport(
+        ImGeo.BeginCanvas(
             "##CameraViewport",
             new Vector2(min.X - maxD, min.Z - maxD),
             new Vector2(max.X + maxD, max.Z + maxD),
@@ -283,7 +283,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
             }
         }
 
-        ImGeo.EndViewport();
+        ImGeo.EndCanvas();
 
         return changed;
     }

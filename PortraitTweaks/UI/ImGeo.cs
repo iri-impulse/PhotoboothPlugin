@@ -28,7 +28,23 @@ public static partial class ImGeo
         return ImGui.GetWindowDrawList();
     }
 
-    public static void BeginViewport(string label, Vector2 min_xy, Vector2 max_xy, Vector2 size)
+    /// <summary>
+    /// A RAII wrapper for an active canvas viewport.
+    /// </summary>
+    public class Canvas : IDisposable
+    {
+        public Canvas(string label, Vector2 min_xy, Vector2 max_xy, Vector2 size)
+        {
+            BeginCanvas(label, min_xy, max_xy, size);
+        }
+
+        public void Dispose()
+        {
+            EndCanvas();
+        }
+    }
+
+    public static void BeginCanvas(string label, Vector2 min_xy, Vector2 max_xy, Vector2 size)
     {
         ImGui.InvisibleButton(label, size, ImGuiButtonFlags.MouseButtonLeft);
         var top_left = ImGui.GetItemRectMin();
@@ -55,7 +71,7 @@ public static partial class ImGeo
         }
     }
 
-    public static void EndViewport()
+    public static void EndCanvas()
     {
         ImGui.PopID();
         ImGui.PopClipRect();

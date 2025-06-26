@@ -147,13 +147,8 @@ internal class CameraController
         Subject = Vector3.Zero;
     }
 
-    public void SetZoom(byte zoom, bool compensateDistance = false)
+    public void SetZoom(byte zoom)
     {
-        var newFoV = BuiltinCamera.ZoomToFoV(zoom);
-
-        var oldMagnification = MathF.Tan(Builtin.FoV * 0.5f);
-        var newMagnification = MathF.Tan(BuiltinCamera.ZoomToFoV(zoom) * 0.5f);
-
         Builtin.SetZoom(zoom);
     }
 
@@ -170,17 +165,14 @@ internal class CameraController
             var oldFoV = Builtin.FoV;
 
             var factor = MathF.Tan(oldFoV * 0.5f) / MathF.Tan(newFoV * 0.5f);
-            var newDistance = Vector3.Distance(Camera, Pivot) * factor;
-
-            var newCamera = Pivot + newDistance * Vector3.Normalize(Camera - Pivot);
+            var newCamera = Subject + (Camera - Subject) * factor;
 
             Custom.SetCamera(newCamera);
-
-            RecomputeBuiltin(false);
+            RecomputeBuiltin(true);
             RecomputeCustom();
         }
 
-        SetZoom(newZoom, compensateDistance);
+        SetZoom(newZoom);
     }
 
     public void AdjustCameraDistance(float delta)

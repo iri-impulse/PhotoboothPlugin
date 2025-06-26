@@ -189,11 +189,15 @@ public class PortraitController : IDisposable
             portrait->SetExpression(Data.Expression);
         }
 
-        if (_changes.Take(PortraitChanges.CameraAny))
+        if (_changes.Take(PortraitChanges.CameraZoom))
+        {
+            portrait->SetCameraZoom(Data.CameraZoom);
+        }
+
+        if (_changes.Take(PortraitChanges.CameraPosition | PortraitChanges.CameraTarget))
         {
             fixed (ExportedPortraitData* data = &Data)
             {
-                portrait->SetCameraZoom(Data.CameraZoom);
                 portrait->SetCameraPosition(&data->CameraPosition, &data->CameraTarget);
             }
         }
@@ -334,6 +338,19 @@ public class PortraitController : IDisposable
         _changes |= PortraitChanges.ImageRotation;
     }
 
+    public byte GetCameraZoom()
+    {
+        return Data.CameraZoom;
+    }
+
+    // This is duplicative with the one in CustomCamera, but right now only
+    // PortraitController is wired up to send changes to the default UI.
+    public void SetCameraZoom(byte zoom)
+    {
+        Data.CameraZoom = Math.Clamp(zoom, CameraConsts.ZoomMin, CameraConsts.ZoomMax);
+        _changes |= PortraitChanges.CameraZoom;
+    }
+
     private static byte ClampBrightness(byte brightness)
     {
         // The dimmest you can make either light source is 20.
@@ -389,8 +406,6 @@ public enum PortraitChanges
     Expression = 1 << 11,
     AnimationProgress = 1 << 12,
     BannerBg = 1 << 13,
-
-    CameraAny = CameraPosition | CameraTarget | CameraZoom,
 }
 
 internal static class Extensions

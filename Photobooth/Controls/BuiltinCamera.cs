@@ -20,9 +20,20 @@ internal class BuiltinCamera
     public float Distance { get; private set; } = DistanceMin;
     public SphereLL Direction { get; private set; } = SphereLL.FromDegrees(0, 0);
 
-    public float FoV => 1.28f - (float)Zoom / 200f;
+    public float FoV => ZoomToFoV(Zoom);
 
     public Vector3 Camera => Pivot + Distance * Direction.Direction();
+
+    public static float ZoomToFoV(byte zoom)
+    {
+        return 1.28f - zoom / 200f;
+    }
+
+    public static byte FoVToZoom(float fov)
+    {
+        var zoom = (1.28f - fov) * 200f;
+        return (byte)Math.Clamp(zoom, ZoomMin, ZoomMax);
+    }
 
     public void SetZoom(byte zoom)
     {

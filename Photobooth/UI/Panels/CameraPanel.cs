@@ -18,6 +18,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
     private readonly CameraController _camera = camera;
 
     private bool _followCharacter = false;
+    private bool _compensateFoV = false;
 
     // The part of the body to face when facing/tracking the character.
     private static readonly ushort _Part = 6;
@@ -79,6 +80,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
             changed |= ResetRotationButton(new Vector2(buttonWidth, 0));
             changed |= FaceCharacterButton(new Vector2(buttonWidth, 0));
             changed |= TrackMotionCheckbox();
+            changed |= FoVCompensationCheckbox();
         }
 
         ImGui.SameLine();
@@ -91,6 +93,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
             changed |= ImageRotationSlider();
             changed |= PivotHeightSlider();
             changed |= CameraPitchSlider();
+            changed |= CameraZoomSlider();
         }
 
         return changed;
@@ -124,6 +127,18 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         {
             ImGui.SetTooltip(
                 "Continuously adjust the camera as the character moves\nUseful for PVP limit breaks and other poses with extreme movement."
+            );
+        }
+        return changed;
+    }
+
+    private bool FoVCompensationCheckbox()
+    {
+        var changed = ImGui.Checkbox("FoV Adjust", ref _compensateFoV);
+        if (ImGui.IsItemHovered())
+        {
+            ImGui.SetTooltip(
+                "Move the camera closer or father when changing the lens's field of view,\nattempting to keep the same portion of the image in-frame."
             );
         }
         return changed;
@@ -182,6 +197,26 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         if (changed)
         {
             _camera.SetCameraPitchRadians(-MathF.Tau * pitch / 360);
+        }
+        return changed;
+    }
+
+    private bool CameraZoomSlider()
+    {
+        var f = _camera.FocalLength;
+        var changed = ImPT.IconSliderFloat(
+            "##zoom",
+            FontAwesomeIcon.SearchPlus,
+            ref f,
+            CameraController.FocalLengthMin,
+            CameraController.FocalLengthMax,
+            "Lens: %.0fmm",
+            "Focal length (zoom)"
+        );
+        if (changed)
+        {
+            _camera.SetFocalLength(f, _compensateFoV);
+            _portrait.SetCameraZoom(_camera.Zoom);
         }
         return changed;
     }

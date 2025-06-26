@@ -92,6 +92,11 @@ internal class CameraController
     // the far edge of the image (so, half the field of view).
     public float ZoomRadians => Builtin.FoV;
 
+    // For fun, the zoom in terms of standard photo sensor focal length.
+    public static float FocalLengthMin = Photography.FocalLength(BuiltinCamera.ZoomToFoV(ZoomMin));
+    public static float FocalLengthMax = Photography.FocalLength(BuiltinCamera.ZoomToFoV(ZoomMax));
+    public float FocalLength => Photography.FocalLength(ZoomRadians);
+
     public static Collision.Box PivotBoxXZ = new(
         new(PivotMin.X, PivotMin.Z),
         new(PivotMax.X, PivotMax.Z)
@@ -142,9 +147,40 @@ internal class CameraController
         Subject = Vector3.Zero;
     }
 
-    public void SetZoom(byte zoom)
+    public void SetZoom(byte zoom, bool compensateDistance = false)
     {
+        var newFoV = BuiltinCamera.ZoomToFoV(zoom);
+
+        var oldMagnification = MathF.Tan(Builtin.FoV * 0.5f);
+        var newMagnification = MathF.Tan(BuiltinCamera.ZoomToFoV(zoom) * 0.5f);
+
         Builtin.SetZoom(zoom);
+    }
+
+    public void SetFocalLength(float f, bool compensateDistance = false)
+    {
+        var newFoV = Photography.AFOV(f);
+        var newZoom = BuiltinCamera.FoVToZoom(newFoV);
+
+        if (compensateDistance)
+        {
+            // We're going to end up with this quantized, so do compensation
+            // on the post-quantization value so we don't accumulate error.
+            newFoV = BuiltinCamera.ZoomToFoV(newZoom);
+            var oldFoV = Builtin.FoV;
+
+            var factor = MathF.Tan(oldFoV * 0.5f) / MathF.Tan(newFoV * 0.5f);
+            var newDistance = Vector3.Distance(Camera, Pivot) * factor;
+
+            var newCamera = Pivot + newDistance * Vector3.Normalize(Camera - Pivot);
+
+            Custom.SetCamera(newCamera);
+
+            RecomputeBuiltin(false);
+            RecomputeCustom();
+        }
+
+        SetZoom(newZoom, compensateDistance);
     }
 
     public void AdjustCameraDistance(float delta)

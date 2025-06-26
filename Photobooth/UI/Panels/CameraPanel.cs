@@ -92,8 +92,8 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
             using var _ = ImRaii.ItemWidth(-float.Epsilon);
 
             changed |= ImageRotationSlider();
-            changed |= PivotHeightSlider();
             changed |= CameraPitchSlider();
+            changed |= PivotHeightSlider();
             changed |= CameraZoomSlider();
         }
 
@@ -154,7 +154,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
             ref rotation,
             -CameraConsts.RotationMax,
             CameraConsts.RotationMax,
-            "Rotation: %+d°",
+            "Rotation: %d°",
             "Image rotation"
         );
         if (changed)
@@ -174,7 +174,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
             CameraConsts.PivotYMin,
             CameraConsts.PivotYMax,
             "Height: %.1f",
-            "Height"
+            "Pivot height"
         );
         if (changed)
         {
@@ -192,8 +192,8 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
             ref pitch,
             -CameraConsts.PitchMax,
             -CameraConsts.PitchMin,
-            "Angle: %+.0f°",
-            "Pitch angle"
+            "Pitch: %+.0f°",
+            "Vertical angle"
         );
         if (changed)
         {

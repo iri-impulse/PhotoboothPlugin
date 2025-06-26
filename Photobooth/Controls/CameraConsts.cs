@@ -1,7 +1,6 @@
 using System.Numerics;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
-using Photobooth.Maths;
 
 namespace Photobooth.Controls;
 

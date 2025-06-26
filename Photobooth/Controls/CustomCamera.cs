@@ -31,6 +31,11 @@ internal class CustomCamera
     public float Yaw =>
         -MathF.Atan2(TargetXZ.Y - CameraXZ.Y, TargetXZ.X - CameraXZ.X) - MathF.PI / 2;
 
+    // The notional target Y position, imputed by following the camera's line
+    // of sight forward at the current pitch.
+    public float TargetY => Camera.Y + DistanceXZ * MathF.Tan(Pitch);
+    public Vector3 Target => new(TargetXZ.X, TargetY, TargetXZ.Y);
+
     public SphereLL Direction => SphereLL.FromRadians(Pitch, Yaw);
 
     public void SetCamera(Vector3 camera)

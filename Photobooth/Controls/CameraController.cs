@@ -1,7 +1,6 @@
 using System;
 using System.Numerics;
 using Photobooth.Maths;
-using Photobooth.Maths.Collision;
 using static Photobooth.Controls.CameraConsts;
 
 namespace Photobooth.Controls;
@@ -88,19 +87,16 @@ internal class CameraController
     // The "zoom factor" from 0 to 200 controlled by the zoom slider in the UI.
     public byte Zoom => Builtin.Zoom;
 
-    // The "normalized zoom", this is the angle in radians from the center to
-    // the far edge of the image (so, half the field of view).
-    public float ZoomRadians => Builtin.FoV;
+    // The angular field of view of the camera, in radians.
+    public float FoV => Builtin.FoV;
 
     // For fun, the zoom in terms of standard photo sensor focal length.
     public static float FocalLengthMin = Photography.FocalLength(BuiltinCamera.ZoomToFoV(ZoomMin));
     public static float FocalLengthMax = Photography.FocalLength(BuiltinCamera.ZoomToFoV(ZoomMax));
-    public float FocalLength => Photography.FocalLength(ZoomRadians);
 
-    public static Collision.Box PivotBoxXZ = new(
-        new(PivotMin.X, PivotMin.Z),
-        new(PivotMax.X, PivotMax.Z)
-    );
+    public float FocalLength => Photography.FocalLength(FoV);
+
+    public static Collision.Box PivotBox = new(PivotMin, PivotMax);
 
     public unsafe void Load(Editor e)
     {
@@ -165,7 +161,7 @@ internal class CameraController
             var oldFoV = Builtin.FoV;
 
             var factor = MathF.Tan(oldFoV * 0.5f) / MathF.Tan(newFoV * 0.5f);
-            var newCamera = Subject + (Camera - Subject) * factor;
+            var newCamera = Custom.Target + (Custom.Camera - Custom.Target) * factor;
 
             Custom.SetCamera(newCamera);
             RecomputeBuiltin(true);
@@ -180,10 +176,9 @@ internal class CameraController
         // As with Client::UI::Misc::CharaViewPortrait.SetCameraDistance, but
         // we want to do it without necessarily changing the real camera yet.
         var increment = DistanceIncrement / 1000f;
-        var zoomFactor = MathF.Tan(ZoomRadians * 0.5f);
-        var normalizedDistance = zoomFactor * Distance;
-        var update = 2 * normalizedDistance * increment * delta;
-        Builtin.SetDistance(Builtin.Distance + update);
+        var zoomFactor = 2 * MathF.Tan(FoV / 2);
+        var rate = zoomFactor * increment;
+        Builtin.SetDistance(Builtin.Distance * (1 + delta * rate));
         RecomputeCustom();
     }
 
@@ -199,15 +194,26 @@ internal class CameraController
     /// </summary>
     public void SetCameraPositionXZ(Vector2 cameraXZ, bool preserveDistance = false)
     {
+        var oldDistance = Vector2.Distance(TargetXZ, Custom.CameraXZ);
         if (preserveDistance)
         {
-            var distance = Vector2.Distance(TargetXZ, Custom.CameraXZ);
-            cameraXZ = new Collision.Circle(TargetXZ, distance).Closest(cameraXZ);
+            cameraXZ = new Collision.Circle(TargetXZ, oldDistance).Closest(cameraXZ);
         }
 
-        var camera = new Vector3(cameraXZ.X, Camera.Y, cameraXZ.Y);
-        Custom.SetCamera(camera);
-        RecomputeBuiltin(true);
+        var newDistance = Vector2.Distance(cameraXZ, TargetXZ);
+        var deltaY = MathF.Tan(Custom.Pitch) * (oldDistance - newDistance);
+        var originalY = Custom.Camera.Y;
+
+        // It's possible that our attempt to move the camera up/down to follow
+        // the pitch will put the pivot out of bounds. In these cases we prefer
+        // to try again and compromise on the vertical camera position.
+        Custom.SetCamera(cameraXZ.InsertY(originalY + deltaY));
+        if (!RecomputeBuiltin(true))
+        {
+            Custom.SetCamera(cameraXZ.InsertY(originalY));
+            RecomputeBuiltin(true);
+        }
+
         RecomputeCustom();
     }
 
@@ -239,9 +245,6 @@ internal class CameraController
     /// </summary>
     public void FaceSubject()
     {
-        // Right now we're not adjusting the camera vertical angle. This is
-        // alright because you can adjust it manually, even while camera
-        // following is active, but it's not completely ideal.
         Custom.SetTargetXZ(Subject.XZ());
         RecomputeBuiltin(true);
         RecomputeCustom();
@@ -249,7 +252,7 @@ internal class CameraController
 
     public void SetPivotPositionXZ(Vector2 pivotXZ)
     {
-        var newPivot = new Vector3(pivotXZ.X, Pivot.Y, pivotXZ.Y);
+        var newPivot = pivotXZ.InsertY(Pivot.Y);
         newPivot = Vector3.Clamp(newPivot, PivotMin, PivotMax);
         Builtin.SetPivot(newPivot);
     }
@@ -261,8 +264,8 @@ internal class CameraController
         var theta = newAngle - oldAngle;
         var rotation = Matrix3x2.CreateRotation(theta, Subject.XZ());
 
-        var newPivotXZ = Vector2.Transform(Pivot.XZ(), rotation);
-        if (!PivotBoxXZ.Contains(newPivotXZ))
+        var newPivot = Vector2.Transform(Pivot.XZ(), rotation).InsertY(Pivot.Y);
+        if (!PivotBox.Contains(newPivot))
         {
             return;
         }
@@ -270,7 +273,7 @@ internal class CameraController
         var newCameraXZ = Vector2.Transform(Custom.CameraXZ, rotation);
         var newTargetXZ = Vector2.Transform(TargetXZ, rotation);
 
-        var newCamera = new Vector3(newCameraXZ.X, Camera.Y, newCameraXZ.Y);
+        var newCamera = newCameraXZ.InsertY(Camera.Y);
         Custom.SetCamera(newCamera);
         Custom.SetTargetXZ(newTargetXZ);
 
@@ -280,7 +283,7 @@ internal class CameraController
 
     public void SetPivotPositionY(float pivotY)
     {
-        var newPivot = new Vector3(Pivot.X, pivotY, Pivot.Z);
+        var newPivot = Pivot.XZ().InsertY(pivotY);
         Builtin.SetPivot(newPivot);
     }
 
@@ -306,6 +309,14 @@ internal class CameraController
     /// <summary>
     /// Recompute the pivot position based on our custom coordinate system.
     /// </summary>
+    /// <param name="allowCameraMovement">
+    /// Whether to lock the camera in place and fail if no pivot can be found,
+    /// or to find a valid pivot position even if it means moving the camera.
+    /// </param>
+    /// <returns>
+    /// True if a legal pivot was found and the camera was updated, false
+    /// if no change could be made.
+    /// </returns>
     /// <remarks>
     /// This is where the magic happens. Our UI works in terms of a camera and
     /// target position, ignoring the existence of the pivot. To use it as a
@@ -315,33 +326,35 @@ internal class CameraController
     /// The result is a legal built-in camera position that's as close as we
     /// can manage to the custom camera, but not necessarily identical to it.
     /// </remarks>
-    private void RecomputeBuiltin(bool allowCameraMovement = false)
+    private bool RecomputeBuiltin(bool allowCameraMovement = false)
     {
         // Move the pivot to the spot in the line of sight closest to the
         // subject, respecting limits of camera distance and position.
-        var cameraXZ = Custom.Camera.XZ();
-        var pivotXZ = Pivot.XZ();
-        var targetXZ = Custom.TargetXZ;
-        var subjectXZ = Subject.XZ();
+        var camera = Custom.Camera;
+        var target = Custom.Target;
 
-        var line = new Collision.Line(cameraXZ, targetXZ);
-        var lineLength = Vector2.Distance(cameraXZ, targetXZ);
+        var line = new Collision.Line(camera, target);
+        var lineLength = Vector3.Distance(camera, target);
 
         if (lineLength < 0.001f)
         {
-            return;
+            return false;
         }
 
-        if (!line.Intersects(PivotBoxXZ, out var near, out var far))
+        if (!line.Intersects(PivotBox, out var near, out var far))
         {
-            return;
+            return false;
         }
 
-        line.Closest(subjectXZ, out var t);
+        // For pivot constraints we need its 3d position, but for choosing the
+        // best option we only want it to be XZ-close to the subject.
+        var cameraXZ0 = camera.XZ().InsertY(0);
+        var targetXZ0 = target.XZ().InsertY(0);
+        var subjectXZ0 = Subject.XZ().InsertY(0);
+        new Collision.Line(cameraXZ0, targetXZ0).Closest(subjectXZ0, out var t);
 
-        var distanceScale = MathF.Cos(Custom.Pitch);
-        var minDistance = DistanceMin * distanceScale / lineLength;
-        var maxDistance = DistanceMax * distanceScale / lineLength;
+        var minDistance = DistanceMin / lineLength;
+        var maxDistance = DistanceMax / lineLength;
 
         // We now have an interval of legal values based on the camera distance
         // and an interval of legal values based on the bounding box. But these
@@ -357,13 +370,13 @@ internal class CameraController
         if (near > maxDistance)
         {
             if (!allowCameraMovement)
-                return;
+                return false;
             min = max = near;
         }
         else if (far < minDistance)
         {
             if (!allowCameraMovement)
-                return;
+                return false;
             min = max = far;
         }
         else
@@ -372,12 +385,13 @@ internal class CameraController
             max = Math.Min(far, maxDistance);
         }
 
-        var newPivotXZ = line.At(Math.Clamp(t, min, max));
-        var newPivot = new Vector3(newPivotXZ.X, Pivot.Y, newPivotXZ.Y);
-        var newDistance = Vector2.Distance(newPivotXZ, cameraXZ) / distanceScale;
+        var newPivot = line.At(Math.Clamp(t, min, max));
+        var newDistance = Vector3.Distance(newPivot, camera);
 
         Builtin.SetPivot(newPivot);
         Builtin.SetDirection(Custom.Direction);
         Builtin.SetDistance(newDistance);
+
+        return true;
     }
 }

@@ -62,7 +62,6 @@ public record struct SphereLL
     {
         _latitude = lat;
         _longitude = lon;
-        //Normalize();
     }
 
     public static SphereLL FromDegrees(float lat, float lon)

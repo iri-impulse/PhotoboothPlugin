@@ -1,6 +1,5 @@
 using System;
 using System.Numerics;
-using System.Threading.Channels;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
@@ -21,7 +20,9 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
     private bool _compensateFoV = false;
 
     // The part of the body to face when facing/tracking the character.
-    private static readonly ushort _Part = 6;
+    private const ushort MiddleFoot = 6;
+    private const ushort Head = 26;
+    private static readonly ushort _Part = Head;
 
     public override string? Help { get; } =
         "Left click: drag a handle to move the camera (circle), target (arrow), or pivot (diamond).\n"
@@ -236,7 +237,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         var shiftHeld = ImGui.IsKeyDown(ImGuiKey.ModShift);
 
         // Camera view wedge.
-        canvas.AddCameraWedge(cameraXZ, _camera.Direction.LonRadians, _camera.ZoomRadians);
+        canvas.AddCameraWedge(cameraXZ, _camera.Direction.LonRadians, _camera.FoV);
         canvas.AddCameraApparatus(cameraXZ, pivotXZ, targetXZ);
 
         // Draggable sun for light angle.
@@ -251,7 +252,6 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         canvas.AddPlayerMarker(subjectXZ, e.CharacterDirection());
 
         // Camera target handle.
-
         var newTargetXZ = targetXZ;
         if (canvas.DragTarget(ref newTargetXZ))
         {
@@ -262,6 +262,19 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         if (shiftHeld && (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive()))
         {
             canvas.AddOrbitIndicator(targetXZ, cameraXZ);
+        }
+
+        // Camera position handle.
+        var newCameraXZ = cameraXZ;
+        if (canvas.DragCamera(ref newCameraXZ))
+        {
+            _camera.SetCameraPositionXZ(newCameraXZ, shiftHeld);
+            changed = true;
+        }
+
+        if (shiftHeld && (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive()))
+        {
+            canvas.AddOrbitIndicator(cameraXZ, targetXZ);
         }
 
         // Camera pivot handle.
@@ -286,19 +299,6 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
             canvas.AddOrbitIndicator(pivotXZ, subjectXZ);
         }
 
-        // Camera position handle.
-        var newCameraXZ = cameraXZ;
-        if (canvas.DragCamera(ref newCameraXZ))
-        {
-            _camera.SetCameraPositionXZ(newCameraXZ, shiftHeld);
-            changed = true;
-        }
-
-        if (shiftHeld && (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive()))
-        {
-            canvas.AddOrbitIndicator(cameraXZ, targetXZ);
-        }
-
         // Right click pan.
         var panning =
             !changed
@@ -310,7 +310,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
             var delta = ImGeo.ScaleToView(ImGui.GetIO().MouseDelta);
             if (delta.LengthSquared() > 1e-6f)
             {
-                var pivotDelta = new Vector3(delta.X, 0, delta.Y);
+                var pivotDelta = delta.InsertY(0);
                 _camera.Translate(pivotDelta);
                 changed = true;
             }

@@ -4,7 +4,6 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
-using Photobooth.GameExt;
 using Photobooth.Maths;
 
 namespace Photobooth.Controls;

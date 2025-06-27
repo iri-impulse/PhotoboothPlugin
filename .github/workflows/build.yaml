@@ -2,8 +2,8 @@ name: .NET Build
 
 on:
   push:
-    branches: '*'
-    tags-ignore: '*'
+    branches: ["**"]
+    tags-ignore: ["**"]
   pull_request:
 
 env:
@@ -18,7 +18,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '9.x.x'
+          dotnet-version: "9.x.x"
 
       - name: Restore dependencies
         run: dotnet restore
@@ -43,4 +43,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           path: |
-            ./${{ project_name }}/bin/Release/${{ project_name }}/*
+            ./${{ env.project_name }}/bin/Release/${{ env.project_name }}/*

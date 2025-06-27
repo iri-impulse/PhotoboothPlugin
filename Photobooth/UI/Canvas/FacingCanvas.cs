@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
@@ -16,8 +17,8 @@ public class FacingCanvas : IDisposable
     private const float AspectRatio = 0.8f;
 
     private const uint BorderColor = 0xD0FFFFFF;
-    private const uint DisabledColor = 0x80FFFFFF;
-    private const uint TextColor = 0x80FFFFFF;
+    private const uint TopTextColor = 0x80FFFFFF;
+    private const uint PositionTextColor = 0xFF606060u;
 
     private const float Padding = 12f;
     private const float HandleSize = 10f;
@@ -68,30 +69,7 @@ public class FacingCanvas : IDisposable
         AddBoundingBox();
     }
 
-    /// <summary>
-    /// Shorthand form, for when you don't need to anything else on the canvas.
-    /// </summary>
-    public static bool PickFacing(
-        string label,
-        ref SphereLL dir,
-        Vector2 topleft,
-        Vector2 bottomright,
-        string? disabledReason = null
-    )
-    {
-        using var canvas = new FacingCanvas(label, topleft, bottomright);
-
-        if (disabledReason is not null)
-        {
-            canvas.AddTopText(disabledReason, DisabledColor);
-            canvas.DummyDirection(ref dir);
-            return false;
-        }
-
-        return canvas.DragDirection(ref dir);
-    }
-
-    public void AddTopText(string text, uint col = TextColor)
+    public void AddTopText(string text, uint col = TopTextColor)
     {
         var textSize = ImGeo.CalcTextSize(text);
         var textOffset = new Vector2((_viewSize.X - textSize.X) / 2, 0);
@@ -100,8 +78,6 @@ public class FacingCanvas : IDisposable
 
     public bool DragDirection(ref SphereLL dir)
     {
-        AddCoordinates(dir);
-
         var vec = dir.Degrees.Swap();
         var handlePx = HandleSize * ImGeo.GetPixelSize().X;
 
@@ -132,9 +108,8 @@ public class FacingCanvas : IDisposable
 
     public void DummyDirection(ref SphereLL dir)
     {
-        AddCoordinates(dir);
         var handlePx = HandleSize * ImGeo.GetPixelSize().X;
-        ImGeo.AddCircle(dir.Degrees.Swap(), handlePx, DisabledColor);
+        ImGeo.AddCircle(dir.Degrees.Swap(), handlePx, TopTextColor);
     }
 
     private void AddBoundingBox()
@@ -143,15 +118,16 @@ public class FacingCanvas : IDisposable
         ImGeo.AddRect(_topLeft - _viewPadding, _bottomRight + _viewPadding, BorderColor);
     }
 
-    private void AddCoordinates(SphereLL dir)
+    public void AddCoordinates(SphereLL dir)
     {
         var lon = dir.LonDegrees;
         var lat = dir.LatDegrees;
 
-        // Display the numerical values.
-        var textSize = ImGeo.CalcTextSize("H: -XX.0° ");
-        var textPos = new Vector2(_topLeft.X + _viewPadding.X, _bottomRight.Y - textSize.Y / 2);
-        ImGeo.AddText(textPos, TextColor, $"H: {lon:F1}°");
-        ImGeo.AddText(textPos + new Vector2(textSize.X, 0), TextColor, $"V: {lat:F1}°");
+        using var font = ImRaii.PushFont(UiBuilder.MonoFont);
+        var text = $"{lon, 5:##0.0} H / {lat, 5:##0.0} V";
+        var size = ImGui.CalcTextSize(text);
+        var pos = ImGui.GetItemRectMax() - size - ImGui.GetStyle().ItemSpacing;
+
+        ImGeo.GetActiveDrawList().AddText(pos, PositionTextColor, text);
     }
 }

@@ -11,7 +11,7 @@ A Dalamud plugin for FFXIV that provides additional controls when editing a port
 
 ## Screenshots
 
-![Photobooth main window](/Assets/Example_mainwindow.png)
+![Photobooth main window](/doc/images/Example_mainwindow.png)
 
 ## FAQ
 

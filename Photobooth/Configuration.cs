@@ -12,6 +12,8 @@ public class Configuration : IPluginConfiguration
 
     public WindowAttachment? AttachWindow { get; set; } = null;
 
+    public bool ShowCoordinates { get; set; } = false;
+
     // Not a config-window setting, but we do save it when you change it.
     public bool CompensateFoV { get; set; } = false;
 

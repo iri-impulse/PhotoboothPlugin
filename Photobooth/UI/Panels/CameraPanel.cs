@@ -248,8 +248,12 @@ internal class CameraPanel(
         var targetXZ = _camera.TargetXZ;
 
         using var canvas = new CameraCanvas();
-
         var shiftHeld = ImGui.IsKeyDown(ImGuiKey.ModShift);
+
+        if (_config.ShowCoordinates)
+        {
+            canvas.AddPositionText(cameraXZ, targetXZ);
+        }
 
         // Camera view wedge.
         canvas.AddCameraWedge(cameraXZ, _camera.Direction.LonRadians, _camera.FoV);

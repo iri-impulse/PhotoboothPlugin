@@ -12,19 +12,24 @@ public class ConfigWindow : Window, IDisposable
 {
     private readonly Configuration _configuration;
 
+    private static string[] AttachmentNames =>
+        ["Freely movable", "Left side", "Right side", "Automatic"];
+    private static WindowAttachment?[] Attachments =>
+        [null, WindowAttachment.Left, WindowAttachment.Right, WindowAttachment.Auto];
+
     public ConfigWindow(Plugin plugin)
         : base($"{Plugin.PluginName} Options")
     {
-        Flags =
-            ImGuiWindowFlags.AlwaysAutoResize
-            | ImGuiWindowFlags.NoCollapse
-            | ImGuiWindowFlags.NoScrollbar
-            | ImGuiWindowFlags.NoScrollWithMouse;
+        Flags = ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse;
 
         AllowPinning = false;
         AllowClickthrough = false;
-        Size = new Vector2(320, 180);
-        SizeCondition = ImGuiCond.Always;
+
+        SizeConstraints = new WindowSizeConstraints
+        {
+            MinimumSize = new Vector2(360, 180),
+            MaximumSize = new Vector2(360, float.MaxValue),
+        };
 
         _configuration = plugin.Configuration;
     }
@@ -40,13 +45,16 @@ public class ConfigWindow : Window, IDisposable
             _configuration.Save();
         }
 
-        using (ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.DalamudGrey2))
+        HintText($"You can open the window manually with {Plugin.CommandName}.");
+
+        var showCoordinates = _configuration.ShowCoordinates;
+        if (ImGui.Checkbox("Show camera coordinates", ref showCoordinates))
         {
-            using var _ = ImRaii.PushIndent();
-            ImGui.TextWrapped(
-                $"Type {Plugin.CommandName} while editing a portrait to manually toggle the {Plugin.PluginName} window."
-            );
+            _configuration.ShowCoordinates = showCoordinates;
+            _configuration.Save();
         }
+
+        HintText("This can be useful for reproducing a portrait later.");
 
         ImGui.Spacing();
 
@@ -62,18 +70,17 @@ public class ConfigWindow : Window, IDisposable
             _configuration.Save();
         }
 
-        var style = ImGui.GetStyle();
-        var size = ImGui.CalcTextSize("Done") + 2 * style.FramePadding;
-        ImGui.SetCursorPos(ImGui.GetWindowContentRegionMax() - size - style.WindowPadding / 2);
-        if (ImGui.Button("Done"))
+        ImGui.Spacing();
+        if (ImGui.Button("Done", new(60, 0)))
         {
             IsOpen = false;
         }
     }
 
-    private static string[] AttachmentNames =>
-        ["Freely movable", "Left side", "Right side", "Automatic"];
-
-    private static WindowAttachment?[] Attachments =>
-        [null, WindowAttachment.Left, WindowAttachment.Right, WindowAttachment.Auto];
+    private static void HintText(string text)
+    {
+        using var color = ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.DalamudGrey2);
+        using var indent = ImRaii.PushIndent();
+        ImGui.TextWrapped(text);
+    }
 }

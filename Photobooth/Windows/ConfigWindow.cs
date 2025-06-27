@@ -27,7 +27,7 @@ public class ConfigWindow : Window, IDisposable
 
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(360, 180),
+            MinimumSize = new Vector2(360, 150),
             MaximumSize = new Vector2(360, float.MaxValue),
         };
 
@@ -71,7 +71,14 @@ public class ConfigWindow : Window, IDisposable
         }
 
         ImGui.Spacing();
-        if (ImGui.Button("Done", new(60, 0)))
+        ImGui.Dummy(new(0, ImGui.GetFrameHeight() / 2));
+
+        var w = MathF.Max(
+            ImGui.GetContentRegionAvail().X / 3,
+            ImGui.CalcTextSize("Done").X + 2 * ImGui.GetStyle().FramePadding.X
+        );
+        ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - w);
+        if (ImGui.Button("Done", new(w, 0)))
         {
             IsOpen = false;
         }

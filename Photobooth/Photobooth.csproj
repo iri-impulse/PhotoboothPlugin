@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Dalamud.NET.Sdk/12.0.2">
     <PropertyGroup>
-        <LangVersion>preview</LangVersion>
+        <PluginVersion>0.0.1</PluginVersion>
     </PropertyGroup>
+
     <PropertyGroup>
-        <Version>0.0.0.1</Version>
         <Description>Enhances the portrait editor.</Description>
         <PackageProjectUrl>https://github.com/iri-impulse/PhotoboothPlugin</PackageProjectUrl>
         <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
-        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <LangVersion>preview</LangVersion>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Version>$(PluginVersion)</Version>
+        <FileVersion>$(PluginVersion)</FileVersion>
+        <AssemblyVersion>$(PluginVersion)</AssemblyVersion>
+        <OutputPath>bin\$(Configuration)\</OutputPath>
     </PropertyGroup>
 </Project>

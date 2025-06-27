@@ -7,7 +7,7 @@ using ImGuiNET;
 
 namespace Photobooth.UI.Stateless;
 
-public static partial class ImPT
+public static partial class ImPB
 {
     /// <summary>
     /// A non-collapsible header with an icon, a title, and optional help text.

@@ -4,7 +4,6 @@ using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using Photobooth.Controls;
 using Photobooth.UI.Canvas;
-using Photobooth.UI.Stateless;
 
 namespace Photobooth.UI.Panels;
 

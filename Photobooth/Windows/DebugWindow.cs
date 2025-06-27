@@ -109,12 +109,12 @@ internal class DebugWindow : Window
         _Mem.CharaViewPortrait = (nint)portrait;
 
         var pSched = _MemGCHandle.AddrOfPinnedObject() + 0;
-        ImPT.CopyAddress("SchedulerTimeline (p)", pSched);
+        ImPB.CopyAddress("SchedulerTimeline (p)", pSched);
 
         var pCont = _MemGCHandle.AddrOfPinnedObject() + 8;
-        ImPT.CopyAddress("TimelineContainer (p)", pCont);
+        ImPB.CopyAddress("TimelineContainer (p)", pCont);
 
         var pPortrait = _MemGCHandle.AddrOfPinnedObject() + 16;
-        ImPT.CopyAddress("CharaViewPortrait (p)", pPortrait);
+        ImPB.CopyAddress("CharaViewPortrait (p)", pPortrait);
     }
 }

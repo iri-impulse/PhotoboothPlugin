@@ -1,6 +1,7 @@
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Common.Math;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace Photobooth.GameExt;
 
@@ -35,6 +36,11 @@ public unsafe class Funcs
         Vector3*,
         uint,
         Vector3*> Character_GetPartPosition;
+
+    [Signature(
+        "40 53 48 83 EC ?? 80 B9 ?? ?? ?? ?? ?? 48 8B D9 74 ?? E8 ?? ?? ?? ?? 41 B8 ?? ?? ?? ?? 48 8D 54 24 ?? 48 8B 48 ?? 48 8B 01 FF 50 ?? 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 45 33 C0"
+    )]
+    public readonly delegate* unmanaged<AtkUnitBase*, void> AgentBannerEditor_Hide2;
 }
 
 public static unsafe class FuncExtensions

@@ -15,7 +15,7 @@ internal abstract class Panel(FontAwesomeIcon icon, string title)
 
     public void Draw()
     {
-        ImPT.IconHeader(Title, Icon, Help);
+        ImPB.IconHeader(Title, Icon, Help);
         DrawBody();
     }
 }

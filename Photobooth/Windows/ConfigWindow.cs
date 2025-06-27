@@ -42,6 +42,7 @@ public class ConfigWindow : Window, IDisposable
 
         using (ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.DalamudGrey2))
         {
+            using var _ = ImRaii.PushIndent();
             ImGui.TextWrapped(
                 $"Type {Plugin.CommandName} while editing a portrait to manually toggle the {Plugin.PluginName} window."
             );

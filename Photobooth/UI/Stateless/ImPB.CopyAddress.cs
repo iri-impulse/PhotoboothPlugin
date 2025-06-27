@@ -2,7 +2,7 @@ using ImGuiNET;
 
 namespace Photobooth.UI.Stateless;
 
-public static partial class ImPT
+public static partial class ImPB
 {
     /// <summary>
     /// For debugging, a widget that makes a copyable textbox for a pointer.

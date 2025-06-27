@@ -6,7 +6,7 @@ using ImGuiNET;
 
 namespace Photobooth.UI.Stateless;
 
-public static partial class ImPT
+public static partial class ImPB
 {
     private static long _NudgeButtonStart = 0;
 
@@ -27,25 +27,21 @@ public static partial class ImPT
         ImGui.PushButtonRepeat(false);
         using var _id = ImRaii.PushId(label);
         using var _group = ImRaii.Group();
-        using var _sty = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, style.ItemInnerSpacing);
 
         var changed = false;
-
-        var plusIcon = FontAwesomeIcon.Plus;
-        var minusIcon = FontAwesomeIcon.Minus;
 
         // Slider.
         var sliderWidth =
             ImGui.CalcItemWidth()
-            - ImGuiComponents.GetIconButtonWithTextWidth(plusIcon, "")
-            - ImGuiComponents.GetIconButtonWithTextWidth(minusIcon, "")
-            - style.ItemInnerSpacing.X;
+            - 2 * ImGui.GetFrameHeight()
+            - style.ItemInnerSpacing.X
+            - 2 * style.FramePadding.X;
 
         ImGui.SetNextItemWidth(sliderWidth);
         changed |= ImGui.SliderFloat("##progressbar", ref value, 0, max, "%.3f");
 
         // Minus button.
-        ImGui.SameLine();
+        ImGui.SameLine(0, style.ItemInnerSpacing.X);
         var minusClicked = ImGuiComponents.IconButton(FontAwesomeIcon.Minus);
 
         if (ImGui.IsItemActivated())
@@ -65,7 +61,7 @@ public static partial class ImPT
         }
 
         // Plus button.
-        ImGui.SameLine();
+        ImGui.SameLine(0, style.ItemInnerSpacing.X);
         var plusClicked = ImGuiComponents.IconButton(FontAwesomeIcon.Plus);
 
         if (ImGui.IsItemActivated())

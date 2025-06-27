@@ -25,6 +25,9 @@ public static class CameraConsts
     /// </summary>
     public const byte ZoomMax = 200;
 
+    public const short RotationMin = -90;
+    public const short RotationMax = 90;
+
     public static float OrbitIncrement => Get(Const.OrbitIncrement);
 
     public static float PivotXMin => Get(Const.PivotXMin);

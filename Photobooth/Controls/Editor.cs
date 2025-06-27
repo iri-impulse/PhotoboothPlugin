@@ -1,12 +1,10 @@
 using System;
 using System.Numerics;
-using System.Threading.Tasks;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.Sheets;
 using Photobooth.GameExt;
 
@@ -62,17 +60,23 @@ public unsafe ref struct Editor
         return Portrait->IsAnimationPaused();
     }
 
-    public void ToggleAnimation(bool playing)
+    public void ToggleAnimationPlayback(bool paused)
     {
         AssertValid();
 
-        if (IsAnimationPaused() == !playing)
+        if (IsAnimationPaused() == paused)
         {
             return;
         }
 
-        Portrait->PendingAnimationPauseState = !playing;
+        Portrait->PendingAnimationPauseState = paused;
         Portrait->IsAnimationPauseStatePending = true;
+
+        var addon = (AddonBannerEditor*)Plugin.GameGui.GetAddonByName("BannerEditor");
+        if (addon == null)
+            return;
+
+        addon->PlayAnimationCheckbox->SetChecked(!paused);
     }
 
     public float GetAnimationDuration()
@@ -134,26 +138,6 @@ public unsafe ref struct Editor
         };
 
         timeline->TimelineSequencer.PlayTimeline(row_id, &req);
-    }
-
-    public unsafe void BindUI()
-    {
-        AssertValid();
-
-        var addon = (AddonBannerEditor*)Plugin.GameGui.GetAddonByName("BannerEditor");
-        if (addon == null)
-            return;
-
-        // TODO - need to RE the protocol here a bit, or find a less efficient
-        // but more reliable way to update the builtin portrait editor UI.
-
-        // Syncs the pause button to the current animation state.
-        var atk = State->UIModule->GetRaptureAtkModule();
-        AtkValue[] vals = [];
-        fixed (AtkValue* pVals = vals)
-        {
-            atk->RefreshAddon(Agent->AddonId, 0, pVals);
-        }
     }
 
     public unsafe void SetHasChanged(bool changed)
@@ -226,5 +210,34 @@ public unsafe ref struct Editor
         Locked = 0,
         Free = 1,
         Camera = 2,
+    }
+
+    public readonly void UpdateUI(in ExportedPortraitData data)
+    {
+        var addon = (AddonBannerEditor*)Plugin.GameGui.GetAddonByName("BannerEditor");
+        if (addon == null)
+        {
+            return;
+        }
+
+        addon->ImageRotation->SetValue(data.ImageRotation);
+        addon->CameraZoomSlider->SetValue(data.CameraZoom);
+
+        addon->AmbientLightingBrightnessSlider->SetValue(data.AmbientLightingBrightness);
+        addon->AmbientLightingColorRedSlider->SetValue(data.AmbientLightingColorRed);
+        addon->AmbientLightingColorGreenSlider->SetValue(data.AmbientLightingColorGreen);
+        addon->AmbientLightingColorBlueSlider->SetValue(data.AmbientLightingColorBlue);
+
+        addon->DirectionalLightingBrightnessSlider->SetValue(data.DirectionalLightingBrightness);
+        addon->DirectionalLightingColorRedSlider->SetValue(data.DirectionalLightingColorRed);
+        addon->DirectionalLightingColorGreenSlider->SetValue(data.DirectionalLightingColorGreen);
+        addon->DirectionalLightingColorBlueSlider->SetValue(data.DirectionalLightingColorBlue);
+
+        addon->DirectionalLightingHorizontalAngleSlider->SetValue(
+            data.DirectionalLightingHorizontalAngle
+        );
+        addon->DirectionalLightingVerticalAngleSlider->SetValue(
+            data.DirectionalLightingVerticalAngle
+        );
     }
 }

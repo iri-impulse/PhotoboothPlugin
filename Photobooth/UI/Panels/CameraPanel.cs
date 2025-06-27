@@ -10,21 +10,28 @@ using Photobooth.UI.Stateless;
 
 namespace Photobooth.UI.Panels;
 
-internal class CameraPanel(PortraitController portrait, CameraController camera)
-    : Panel(FontAwesomeIcon.Camera, "Camera")
+internal class CameraPanel(
+    PortraitController portrait,
+    CameraController camera,
+    Configuration config
+) : Panel(FontAwesomeIcon.Camera, "Camera")
 {
     private readonly PortraitController _portrait = portrait;
     private readonly CameraController _camera = camera;
+    private readonly Configuration _config = config;
 
     private bool _followCharacter = false;
+    private bool _compensateFoV = false;
 
     // The part of the body to face when facing/tracking the character.
-    private static readonly ushort _Part = 6;
+    private const ushort Body = 6;
+    private const ushort Head = 26;
+    private static readonly ushort _Part = Head;
 
     public override string? Help { get; } =
-        "Left click: drag a handle to rotate the camera (red) or target point (green).\n"
-        + "Hold shift when dragging to lock distance and only apply rotation."
-        + "Right click: drag anywhere to slide camera and pivot together.\n"
+        "Left click: drag a handle to move the camera (circle), target (arrow), or pivot (diamond).\n"
+        + "Hold shift when dragging to lock distance and only apply rotation.\n"
+        + "Right click: drag anywhere to slide the whole camera setup around.\n"
         + "Mousewheel: adjust camera distance.";
 
     public override void Reset()
@@ -75,19 +82,10 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         using (ImRaii.Group())
         {
             var buttonWidth = 0.3f * entireWidth;
-            if (ImGui.Button("Face Character", new Vector2(buttonWidth, 0)))
-            {
-                _camera.FaceSubject();
-                changed = true;
-            }
-
-            ImGui.Checkbox("Track Motion", ref _followCharacter);
-            if (ImGui.IsItemHovered())
-            {
-                ImGui.SetTooltip(
-                    "Continuously adjust the camera as the character moves\nUseful for PVP limit breaks and other poses with extreme movement."
-                );
-            }
+            changed |= ResetRotationButton(new Vector2(buttonWidth, 0));
+            changed |= FaceCharacterButton(new Vector2(buttonWidth, 0));
+            changed |= TrackMotionCheckbox();
+            changed |= FoVCompensationCheckbox();
         }
 
         ImGui.SameLine();
@@ -97,45 +95,145 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         {
             using var _ = ImRaii.ItemWidth(-float.Epsilon);
 
-            // Height slider.
-            var hIcon = FontAwesomeIcon.RulerVertical;
-            var pivotY = _camera.Pivot.Y;
-            if (
-                ImPT.IconSliderFloat(
-                    "##height",
-                    hIcon,
-                    ref pivotY,
-                    CameraConsts.PivotYMin,
-                    CameraConsts.PivotYMax,
-                    "%.1f",
-                    "Height"
-                )
-            )
-            {
-                _camera.SetPivotPositionY(pivotY);
-                changed = true;
-            }
-
-            // Pitch slider.
-            var pIcon = FontAwesomeIcon.ArrowsUpDown;
-            var pitch = -_camera.Direction.LatDegrees;
-            if (
-                ImPT.IconSliderFloat(
-                    "##pitch",
-                    pIcon,
-                    ref pitch,
-                    -CameraConsts.PitchMax,
-                    -CameraConsts.PitchMin,
-                    "%.1f",
-                    "Pitch up/down"
-                )
-            )
-            {
-                _camera.SetCameraPitchRadians(-MathF.Tau * pitch / 360);
-                changed = true;
-            }
+            changed |= ImageRotationSlider();
+            changed |= CameraPitchSlider();
+            changed |= PivotHeightSlider();
+            changed |= CameraZoomSlider();
         }
 
+        return changed;
+    }
+
+    private bool ResetRotationButton(Vector2 size)
+    {
+        var pressed = ImGui.Button("Reset Rotation", size);
+        if (pressed)
+        {
+            _portrait.SetImageRotation(0);
+        }
+
+        return pressed;
+    }
+
+    private bool FaceCharacterButton(Vector2 size)
+    {
+        var pressed = ImGui.Button("Face Character", size);
+        if (pressed)
+        {
+            _camera.FaceSubject();
+        }
+        return pressed;
+    }
+
+    private bool TrackMotionCheckbox()
+    {
+        ImGui.Checkbox("Track Motion", ref _followCharacter);
+        if (ImGui.IsItemHovered())
+        {
+            ImGui.SetTooltip(
+                "Continuously adjust the camera as the character moves\nUseful for PVP limit breaks and other poses with extreme movement."
+            );
+        }
+
+        // This doesn't modify the portrait (yet), so don't dirty it until or
+        // unless the camera actually moves.
+        return false;
+    }
+
+    private bool FoVCompensationCheckbox()
+    {
+        var compensate = _config.CompensateFoV;
+        if (ImGui.Checkbox("FoV Adjust", ref _compensateFoV))
+        {
+            _config.CompensateFoV = _compensateFoV;
+            _config.Save();
+        }
+
+        if (ImGui.IsItemHovered())
+        {
+            ImGui.SetTooltip(
+                "Move the camera closer or father when changing the lens's field of view,\nattempting to keep the same portion of the image in-frame."
+            );
+        }
+
+        // This never changes the portrait so we don't want to mark it dirty.
+        return false;
+    }
+
+    private bool ImageRotationSlider()
+    {
+        var rotation = (int)_portrait.GetImageRotation();
+        var changed = ImPB.IconSliderInt(
+            "##rotation",
+            FontAwesomeIcon.Redo,
+            ref rotation,
+            -CameraConsts.RotationMax,
+            CameraConsts.RotationMax,
+            "Rotation: %d°",
+            "Image rotation"
+        );
+        if (changed)
+        {
+            _portrait.SetImageRotation((short)rotation);
+        }
+        return changed;
+    }
+
+    private bool PivotHeightSlider()
+    {
+        var pivotY = _camera.Pivot.Y;
+        var changed = ImPB.IconSliderFloat(
+            "##height",
+            FontAwesomeIcon.RulerVertical,
+            ref pivotY,
+            CameraConsts.PivotYMin,
+            CameraConsts.PivotYMax,
+            "Height: %.1f",
+            "Pivot height"
+        );
+        if (changed)
+        {
+            _camera.SetPivotPositionY(pivotY);
+        }
+        return changed;
+    }
+
+    private bool CameraPitchSlider()
+    {
+        var pitch = -_camera.Direction.LatDegrees;
+        var changed = ImPB.IconSliderFloat(
+            "##pitch",
+            FontAwesomeIcon.ArrowsUpDown,
+            ref pitch,
+            -CameraConsts.PitchMax,
+            -CameraConsts.PitchMin,
+            "Pitch: %+.0f°",
+            "Vertical angle"
+        );
+        if (changed)
+        {
+            _camera.SetCameraPitchRadians(-MathF.Tau * pitch / 360);
+        }
+        return changed;
+    }
+
+    private bool CameraZoomSlider()
+    {
+        var f = _camera.FocalLength;
+        var changed = ImPB.IconSliderFloat(
+            "##zoom",
+            FontAwesomeIcon.SearchPlus,
+            ref f,
+            CameraController.FocalLengthMin,
+            CameraController.FocalLengthMax,
+            "Lens: %.0fmm",
+            "Focal length (zoom)"
+        );
+        if (changed)
+        {
+            _camera.SetFocalLength(f, _compensateFoV);
+            _portrait.SetCameraZoom(_camera.Zoom);
+        }
         return changed;
     }
 
@@ -154,7 +252,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         var shiftHeld = ImGui.IsKeyDown(ImGuiKey.ModShift);
 
         // Camera view wedge.
-        canvas.AddCameraWedge(cameraXZ, _camera.Direction.LonRadians, _camera.ZoomRadians);
+        canvas.AddCameraWedge(cameraXZ, _camera.Direction.LonRadians, _camera.FoV);
         canvas.AddCameraApparatus(cameraXZ, pivotXZ, targetXZ);
 
         // Draggable sun for light angle.
@@ -169,7 +267,6 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         canvas.AddPlayerMarker(subjectXZ, e.CharacterDirection());
 
         // Camera target handle.
-
         var newTargetXZ = targetXZ;
         if (canvas.DragTarget(ref newTargetXZ))
         {
@@ -180,6 +277,19 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
         if (shiftHeld && (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive()))
         {
             canvas.AddOrbitIndicator(targetXZ, cameraXZ);
+        }
+
+        // Camera position handle.
+        var newCameraXZ = cameraXZ;
+        if (canvas.DragCamera(ref newCameraXZ))
+        {
+            _camera.SetCameraPositionXZ(newCameraXZ, shiftHeld);
+            changed = true;
+        }
+
+        if (shiftHeld && (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive()))
+        {
+            canvas.AddOrbitIndicator(cameraXZ, targetXZ);
         }
 
         // Camera pivot handle.
@@ -204,19 +314,6 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
             canvas.AddOrbitIndicator(pivotXZ, subjectXZ);
         }
 
-        // Camera position handle.
-        var newCameraXZ = cameraXZ;
-        if (canvas.DragCamera(ref newCameraXZ))
-        {
-            _camera.SetCameraPositionXZ(newCameraXZ, shiftHeld);
-            changed = true;
-        }
-
-        if (shiftHeld && (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive()))
-        {
-            canvas.AddOrbitIndicator(cameraXZ, targetXZ);
-        }
-
         // Right click pan.
         var panning =
             !changed
@@ -228,7 +325,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
             var delta = ImGeo.ScaleToView(ImGui.GetIO().MouseDelta);
             if (delta.LengthSquared() > 1e-6f)
             {
-                var pivotDelta = new Vector3(delta.X, 0, delta.Y);
+                var pivotDelta = delta.InsertY(0);
                 _camera.Translate(pivotDelta);
                 changed = true;
             }

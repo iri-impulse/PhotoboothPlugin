@@ -38,16 +38,15 @@ internal class AnimationPanel(PortraitController portrait)
         var icon = paused ? FontAwesomeIcon.Play : FontAwesomeIcon.Pause;
         if (ImGuiComponents.IconButton(icon, new(ImGui.GetContentRegionAvail().X * 0.15f, 0)))
         {
-            e.ToggleAnimation(paused);
-            e.BindUI();
+            e.ToggleAnimationPlayback(!paused);
         }
 
         var time = _portrait.GetAnimationProgress();
         var duration = DebounceDuration(e);
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-        var timeChanged = ImPT.NudgeFloat("##animation", ref time, 0, duration, _NudgeAmount);
+        ImGui.SetNextItemWidth(-float.Epsilon);
+        var timeChanged = ImPB.NudgeFloat("##animation", ref time, 0, duration, _NudgeAmount);
 
         // In theory there are a few animations (Mesotes mostly) that wouldn't
         // want to pin for held-down nudge buttons, but on net it's worth it.

@@ -1,0 +1,16 @@
+name: Photobooth
+author: iri
+repo_url: https://github.com/iri-impulse/PhotoboothPlugin
+punchline: |
+  Advanced controls for portraits & adventurer plates.
+description: |-
+  Take your portrait & adventurer plate game to the next level with this companion panel for the portrait editor.
+  
+  • Rewind, fast forward, and step through animations frame by frame.
+  • Adjust character head and eye direction without moving the camera.
+  • Position camera and pivot point with a top-down map.
+  • More intuitive controls for lighting color and angle.
+tags:
+  - portrait
+  - adventurer plates
+  - fashion

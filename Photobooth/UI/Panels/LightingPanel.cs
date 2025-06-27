@@ -32,7 +32,7 @@ internal class LightingPanel(PortraitController portrait)
         {
             var ambient = _portrait.GetAmbientLightColor().ToVector4();
             if (
-                ImPT.ColorConfirm4(
+                ImPB.ColorConfirm4(
                     "Ambient",
                     ref ambient,
                     ref _prevAmbient,
@@ -46,7 +46,7 @@ internal class LightingPanel(PortraitController portrait)
 
             var directional = _portrait.GetDirectionalLightColor().ToVector4();
             if (
-                ImPT.ColorConfirm4(
+                ImPB.ColorConfirm4(
                     "Directional",
                     ref directional,
                     ref _prevDiffuse,
@@ -67,7 +67,7 @@ internal class LightingPanel(PortraitController portrait)
             using var width = ImRaii.ItemWidth(-float.Epsilon);
 
             var lightDir = _portrait.GetDirectionalLightDirection();
-            if (ImPT.Direction("##lightDirection", ref lightDir, -180, 180, -90, 90))
+            if (ImPB.Direction("##lightDirection", ref lightDir, -180, 180, -90, 90))
             {
                 _portrait.SetDirectionalLightDirection(lightDir);
             }

@@ -148,7 +148,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
     private bool ImageRotationSlider()
     {
         var rotation = (int)_portrait.GetImageRotation();
-        var changed = ImPT.IconSliderInt(
+        var changed = ImPB.IconSliderInt(
             "##rotation",
             FontAwesomeIcon.Redo,
             ref rotation,
@@ -167,7 +167,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
     private bool PivotHeightSlider()
     {
         var pivotY = _camera.Pivot.Y;
-        var changed = ImPT.IconSliderFloat(
+        var changed = ImPB.IconSliderFloat(
             "##height",
             FontAwesomeIcon.RulerVertical,
             ref pivotY,
@@ -186,7 +186,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
     private bool CameraPitchSlider()
     {
         var pitch = -_camera.Direction.LatDegrees;
-        var changed = ImPT.IconSliderFloat(
+        var changed = ImPB.IconSliderFloat(
             "##pitch",
             FontAwesomeIcon.ArrowsUpDown,
             ref pitch,
@@ -205,7 +205,7 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
     private bool CameraZoomSlider()
     {
         var f = _camera.FocalLength;
-        var changed = ImPT.IconSliderFloat(
+        var changed = ImPB.IconSliderFloat(
             "##zoom",
             FontAwesomeIcon.SearchPlus,
             ref f,

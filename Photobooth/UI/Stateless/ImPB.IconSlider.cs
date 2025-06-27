@@ -5,7 +5,7 @@ using ImGuiNET;
 
 namespace Photobooth.UI.Stateless;
 
-public static partial class ImPT
+public static partial class ImPB
 {
     /// <summary>
     /// A slider with an icon next to it, and possibly a tooltip on the icon.

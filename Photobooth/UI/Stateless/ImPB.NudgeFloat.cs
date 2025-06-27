@@ -6,7 +6,7 @@ using ImGuiNET;
 
 namespace Photobooth.UI.Stateless;
 
-public static partial class ImPT
+public static partial class ImPB
 {
     private static long _NudgeButtonStart = 0;
 

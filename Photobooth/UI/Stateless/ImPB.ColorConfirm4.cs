@@ -5,7 +5,7 @@ using F = ImGuiNET.ImGuiColorEditFlags;
 
 namespace Photobooth.UI.Stateless;
 
-public static partial class ImPT
+public static partial class ImPB
 {
     private const ImGuiColorEditFlags PassthroughButtonFlags =
         F.AlphaPreview | F.AlphaPreviewHalf | F.NoBorder | F.NoTooltip;

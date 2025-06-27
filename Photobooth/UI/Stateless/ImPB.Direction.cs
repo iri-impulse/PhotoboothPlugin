@@ -5,7 +5,7 @@ using Photobooth.Maths;
 
 namespace Photobooth.UI.Stateless;
 
-public static partial class ImPT
+public static partial class ImPB
 {
     /// <summary>
     /// A spherical direction via two sliders.

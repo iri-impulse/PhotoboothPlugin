@@ -46,7 +46,7 @@ internal class AnimationPanel(PortraitController portrait)
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(-float.Epsilon);
-        var timeChanged = ImPT.NudgeFloat("##animation", ref time, 0, duration, _NudgeAmount);
+        var timeChanged = ImPB.NudgeFloat("##animation", ref time, 0, duration, _NudgeAmount);
 
         // In theory there are a few animations (Mesotes mostly) that wouldn't
         // want to pin for held-down nudge buttons, but on net it's worth it.

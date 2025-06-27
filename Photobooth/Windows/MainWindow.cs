@@ -62,7 +62,7 @@ public class MainWindow : Window, IDisposable
 
         _animationPanel = new AnimationPanel(_portrait);
         _cameraPanel = new CameraPanel(_portrait, _camera, _plugin.Configuration);
-        _facingPanel = new FacingPanel(_portrait);
+        _facingPanel = new FacingPanel(_portrait, _plugin.Configuration);
         _lightingPanel = new LightingPanel(_portrait);
     }
 

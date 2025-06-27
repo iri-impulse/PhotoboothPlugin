@@ -147,13 +147,12 @@ public class CameraCanvas : IDisposable
     {
         var forward = Vector2.Normalize(targetXZ - cameraXZ);
 
-        AddPositionText(cameraXZ, targetXZ);
         ImGeo.AddLine(cameraXZ, targetXZ, PivotColor);
         AddTargetMarker(targetXZ, forward);
         AddPivotMarker(pivotXZ, forward);
     }
 
-    private void AddPositionText(Vector2 cameraXZ, Vector2 targetXZ)
+    public void AddPositionText(Vector2 cameraXZ, Vector2 targetXZ)
     {
         var cameraYaw = (cameraXZ - targetXZ).Atan2();
         var angle = (cameraYaw / MathF.Tau * 360f + 360f) % 360f;

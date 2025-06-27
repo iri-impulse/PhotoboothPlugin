@@ -1,10 +1,14 @@
+using System;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Command;
+using Dalamud.Hooking;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using Photobooth.GameExt;
 using Photobooth.Windows;
 
 namespace Photobooth;
@@ -51,6 +55,9 @@ public sealed class Plugin : IDalamudPlugin
     private MainWindow MainWindow { get; init; }
     private DebugWindow DebugWindow { get; init; }
 
+    // Used to observe the portrait editor closing sooner than PreFinalize.
+    private Hook<AtkUnitBase.Delegates.Hide2>? _hideHook;
+
     public Plugin()
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
@@ -86,15 +93,14 @@ public sealed class Plugin : IDalamudPlugin
             "BannerEditor",
             OnBannerEditorOpen
         );
-        AddonLifecycle.RegisterListener(
-            AddonEvent.PreFinalize,
-            "BannerEditor",
-            OnBannerEditorClose
-        );
+
+        InstallHooks();
     }
 
     public void Dispose()
     {
+        _hideHook?.Dispose();
+
         WindowSystem.RemoveAllWindows();
 
         ConfigWindow.Dispose();
@@ -102,7 +108,7 @@ public sealed class Plugin : IDalamudPlugin
 
         CommandManager.RemoveHandler(CommandName);
 
-        AddonLifecycle.UnregisterListener([OnBannerEditorOpen, OnBannerEditorClose]);
+        AddonLifecycle.UnregisterListener([OnBannerEditorOpen]);
     }
 
     private void OnBannerEditorOpen(AddonEvent type, AddonArgs args)
@@ -113,12 +119,36 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
-    private void OnBannerEditorClose(AddonEvent type, AddonArgs args)
+    private unsafe void InstallHooks()
     {
-        if (MainWindow.IsOpen)
+        var address = Funcs.Instance().AgentBannerEditor_Hide2;
+        if (address is null)
         {
-            MainWindow.Toggle();
+            Log.Error("Failed to hook AgentBannerEditor.Hide2. Auto-closing disabled.");
+            return;
         }
+        _hideHook = GameInteropProvider.HookFromAddress<AtkUnitBase.Delegates.Hide2>(
+            (nint)address,
+            AgentBannerEditorHide2Detour
+        );
+        _hideHook.Enable();
+    }
+
+    private unsafe void AgentBannerEditorHide2Detour(AtkUnitBase* self)
+    {
+        try
+        {
+            if (MainWindow.IsOpen)
+            {
+                MainWindow.Toggle();
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred while closing the banner editor.");
+        }
+
+        _hideHook?.Original(self);
     }
 
     private void OnCommand(string command, string args)

@@ -46,6 +46,10 @@ public class MainWindow : Window, IDisposable
             MaximumSize = new(600, float.MaxValue),
         };
 
+        // In auto-open mode we want to feel like part of the portrait editor,
+        // so we should let ESC dismiss _it_, not us, and close then.
+        RespectCloseHotkey = !_plugin.Configuration.AutoOpenWhenEditingPortrait;
+
         var settingsButton = new TitleBarButton()
         {
             Icon = FontAwesomeIcon.Cog,

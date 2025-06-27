@@ -22,7 +22,7 @@ public static partial class ImPT
     {
         using var group = ImRaii.Group();
         IconSliderButton(icon, tooltip);
-        ImGui.SameLine();
+        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
         return ImGui.SliderFloat(label, ref value, min, max, format);
     }
 
@@ -38,7 +38,7 @@ public static partial class ImPT
     {
         using var group = ImRaii.Group();
         IconSliderButton(icon, tooltip);
-        ImGui.SameLine();
+        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
         return ImGui.SliderInt(label, ref value, min, max, format);
     }
 
@@ -46,8 +46,6 @@ public static partial class ImPT
     {
         var style = ImGui.GetStyle();
         var color = style.Colors[((int)ImGuiCol.Button)].WithAlpha(0.2f);
-
-        using var _ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, style.ItemInnerSpacing);
 
         ImGuiComponents.DisabledButton(icon, null, color, color, color);
         if (tooltip is not null && ImGui.IsItemHovered())

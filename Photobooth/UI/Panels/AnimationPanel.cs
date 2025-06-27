@@ -45,7 +45,7 @@ internal class AnimationPanel(PortraitController portrait)
         var duration = DebounceDuration(e);
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+        ImGui.SetNextItemWidth(-float.Epsilon);
         var timeChanged = ImPT.NudgeFloat("##animation", ref time, 0, duration, _NudgeAmount);
 
         // In theory there are a few animations (Mesotes mostly) that wouldn't

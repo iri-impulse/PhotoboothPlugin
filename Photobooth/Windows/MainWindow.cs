@@ -16,6 +16,7 @@ namespace Photobooth.Windows;
 public class MainWindow : Window, IDisposable
 {
     private readonly Plugin _plugin;
+
     private readonly PortraitController _portrait = new(new());
     private readonly CameraController _camera = new();
 
@@ -56,7 +57,7 @@ public class MainWindow : Window, IDisposable
         TitleBarButtons = [settingsButton];
 
         _animationPanel = new AnimationPanel(_portrait);
-        _cameraPanel = new CameraPanel(_portrait, _camera);
+        _cameraPanel = new CameraPanel(_portrait, _camera, _plugin.Configuration);
         _facingPanel = new FacingPanel(_portrait);
         _lightingPanel = new LightingPanel(_portrait);
     }

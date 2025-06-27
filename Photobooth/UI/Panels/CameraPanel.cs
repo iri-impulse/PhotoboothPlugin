@@ -10,17 +10,21 @@ using Photobooth.UI.Stateless;
 
 namespace Photobooth.UI.Panels;
 
-internal class CameraPanel(PortraitController portrait, CameraController camera)
-    : Panel(FontAwesomeIcon.Camera, "Camera")
+internal class CameraPanel(
+    PortraitController portrait,
+    CameraController camera,
+    Configuration config
+) : Panel(FontAwesomeIcon.Camera, "Camera")
 {
     private readonly PortraitController _portrait = portrait;
     private readonly CameraController _camera = camera;
+    private readonly Configuration _config = config;
 
     private bool _followCharacter = false;
     private bool _compensateFoV = false;
 
     // The part of the body to face when facing/tracking the character.
-    private const ushort MiddleFoot = 6;
+    private const ushort Body = 6;
     private const ushort Head = 26;
     private static readonly ushort _Part = Head;
 
@@ -123,26 +127,37 @@ internal class CameraPanel(PortraitController portrait, CameraController camera)
 
     private bool TrackMotionCheckbox()
     {
-        var changed = ImGui.Checkbox("Track Motion", ref _followCharacter);
+        ImGui.Checkbox("Track Motion", ref _followCharacter);
         if (ImGui.IsItemHovered())
         {
             ImGui.SetTooltip(
                 "Continuously adjust the camera as the character moves\nUseful for PVP limit breaks and other poses with extreme movement."
             );
         }
-        return changed;
+
+        // This doesn't modify the portrait (yet), so don't dirty it until or
+        // unless the camera actually moves.
+        return false;
     }
 
     private bool FoVCompensationCheckbox()
     {
-        var changed = ImGui.Checkbox("FoV Adjust", ref _compensateFoV);
+        var compensate = _config.CompensateFoV;
+        if (ImGui.Checkbox("FoV Adjust", ref _compensateFoV))
+        {
+            _config.CompensateFoV = _compensateFoV;
+            _config.Save();
+        }
+
         if (ImGui.IsItemHovered())
         {
             ImGui.SetTooltip(
                 "Move the camera closer or father when changing the lens's field of view,\nattempting to keep the same portion of the image in-frame."
             );
         }
-        return changed;
+
+        // This never changes the portrait so we don't want to mark it dirty.
+        return false;
     }
 
     private bool ImageRotationSlider()

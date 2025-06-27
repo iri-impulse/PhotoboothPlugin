@@ -47,3 +47,4 @@ jobs:
         with:
           path: |
             ./${{ env.project_name }}/bin/Release/${{ env.project_name }}/*
+          if-no-files-found: error

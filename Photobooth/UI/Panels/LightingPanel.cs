@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
@@ -13,26 +14,46 @@ internal class LightingPanel(PortraitController portrait)
 {
     private readonly PortraitController _portrait = portrait;
 
+    private Vector4 _prevAmbient = new();
+    private Vector4 _prevDiffuse = new();
+
     protected override void DrawBody()
     {
-        var colorFlags =
+        var flags =
             ImGuiColorEditFlags.AlphaBar
+            | ImGuiColorEditFlags.AlphaPreviewHalf
             | ImGuiColorEditFlags.NoTooltip
-            | ImGuiColorEditFlags.NoOptions
-            | ImGuiColorEditFlags.NoInputs;
+            | ImGuiColorEditFlags.NoInputs
+            | ImGuiColorEditFlags.NoBorder;
 
         var startX = ImGui.GetCursorPosX();
         var entireWidth = ImGui.GetContentRegionAvail().X;
         using (ImRaii.Group())
         {
-            var ambientVec4 = _portrait.GetAmbientLightColor().ToVector4();
-            if (ImGui.ColorEdit4("Ambient##_picker", ref ambientVec4, colorFlags))
+            var ambient = _portrait.GetAmbientLightColor().ToVector4();
+            if (
+                ImPT.ColorConfirm4(
+                    "Ambient",
+                    ref ambient,
+                    ref _prevAmbient,
+                    flags,
+                    "Ambient light color"
+                )
+            )
             {
-                _portrait.SetAmbientLightColor(new RGBA(ambientVec4));
+                _portrait.SetAmbientLightColor(new RGBA(ambient));
             }
 
             var directional = _portrait.GetDirectionalLightColor().ToVector4();
-            if (ImGui.ColorEdit4("Directional##_picker", ref directional, colorFlags))
+            if (
+                ImPT.ColorConfirm4(
+                    "Directional",
+                    ref directional,
+                    ref _prevDiffuse,
+                    flags,
+                    "Directional light color"
+                )
+            )
             {
                 _portrait.SetDirectionalLightColor(new RGBA(directional));
             }

@@ -45,6 +45,29 @@ public unsafe ref struct Editor
         };
     }
 
+    public static unsafe AddonBannerEditor* GetAddon()
+    {
+        return (AddonBannerEditor*)Plugin.GameGui.GetAddonByName("BannerEditor");
+    }
+
+    public static bool IsAddonOpen()
+    {
+        var a = GetAddon();
+        return a != null && a->IsVisible;
+    }
+
+    public static bool IsAddonReady()
+    {
+        var a = GetAddon();
+        var e = Current();
+
+        return e.IsValid & a != null
+            && a->IsVisible
+            && a->IsReady
+            && a->IsFullyLoaded()
+            && e.Portrait->CharaViewPortraitCharacterLoaded;
+    }
+
     private readonly void AssertValid()
     {
         if (!IsValid)

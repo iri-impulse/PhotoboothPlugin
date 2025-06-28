@@ -257,12 +257,9 @@ internal class CameraController
         Builtin.SetPivot(newPivot);
     }
 
-    public void RotatePivotPositionXZ(Vector2 pivotXZ)
+    public void RotateEverything(float angle)
     {
-        var oldAngle = (Subject.XZ() - Pivot.XZ()).Atan2();
-        var newAngle = (Subject.XZ() - pivotXZ).Atan2();
-        var theta = newAngle - oldAngle;
-        var rotation = Matrix3x2.CreateRotation(theta, Subject.XZ());
+        var rotation = Matrix3x2.CreateRotation(angle, Subject.XZ());
 
         var newPivot = Vector2.Transform(Pivot.XZ(), rotation).InsertY(Pivot.Y);
         if (!PivotBox.Contains(newPivot))

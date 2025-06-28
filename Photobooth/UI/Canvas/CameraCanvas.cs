@@ -48,11 +48,8 @@ public class CameraCanvas : IDisposable
 
     public CameraCanvas(string label = "##CameraViewport")
     {
-        var maxD = CameraConsts.DistanceMax;
-        var min = CameraConsts.PivotMin;
-        var max = CameraConsts.PivotMax;
-
         // Dimensions of the camera box, which other elements are relative to.
+        var maxD = CameraConsts.DistanceMax;
         var span = _Max - _Min + 2 * maxD * Vector2.One;
 
         // Draw and respond to controls.
@@ -104,14 +101,11 @@ public class CameraCanvas : IDisposable
         return ImGeo.DragHandleCircle("##CameraPosition", ref cameraXZ, HandlePixels, CameraColor);
     }
 
-    public bool DragPivot(ref Vector2 pivotXZ)
-    {
-        return ImGeo.DragHandleCircle("##CameraPivot", ref pivotXZ, HandlePixels, 0);
-    }
-
     public bool DragTarget(ref Vector2 targetXZ)
     {
-        return ImGeo.DragHandleCircle("##CameraTarget", ref targetXZ, HandlePixels, TargetColor);
+        var changed = ImGeo.DragHandleCircle("##CameraTarget", ref targetXZ, HandlePixels, 0);
+
+        return changed;
     }
 
     public void AddCameraWedge(Vector2 cameraXZ, float facingAngle, float widthAngle)
@@ -187,7 +181,7 @@ public class CameraCanvas : IDisposable
             pos + end,
             pos + right - unit / 2,
             pos - right - unit / 2,
-            PivotColor
+            TargetColor
         );
     }
 

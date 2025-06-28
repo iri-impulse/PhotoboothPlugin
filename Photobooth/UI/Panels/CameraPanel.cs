@@ -28,11 +28,16 @@ internal class CameraPanel(
     private const ushort Head = 26;
     private static readonly ushort _Part = Head;
 
+    // When rotating the whole camera setup, the pivot can get stuck on a wall.
+    // We keep track of the original pivot angle so if there's another valid
+    // position you can accumulate angular delta and jump to it.
+    private float? _dragStartPivotAngle = null;
+
     public override string? Help { get; } =
-        "Left click: drag a handle to move the camera (circle), target (arrow), or pivot (diamond).\n"
-        + "Hold shift when dragging to lock distance and only apply rotation.\n"
+        "Left click: drag a handle to move the camera (circle) or target (arrow).\n"
         + "Right click: drag anywhere to slide the whole camera setup around.\n"
-        + "Mousewheel: adjust camera distance.";
+        + "Mousewheel: adjust camera distance.\n\n"
+        + "Hold shift when dragging to lock distance and only apply rotation.\n";
 
     public override void Reset()
     {
@@ -296,52 +301,61 @@ internal class CameraPanel(
             canvas.AddOrbitIndicator(cameraXZ, targetXZ);
         }
 
-        // Camera pivot handle.
-        var newPivotXZ = pivotXZ;
-        if (canvas.DragPivot(ref newPivotXZ))
-        {
-            if (shiftHeld)
-            {
-                _camera.RotatePivotPositionXZ(newPivotXZ);
-            }
-            else
-            {
-                var deltaXZ = newPivotXZ - pivotXZ;
-                _camera.Translate(new(deltaXZ.X, 0, deltaXZ.Y));
-            }
-
-            changed = true;
-        }
-
         if (shiftHeld && (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive()))
         {
             canvas.AddOrbitIndicator(pivotXZ, subjectXZ);
         }
 
-        // Right click pan.
+        // Right click pan/rotate.
         var panning =
             !changed
-            && ImGui.IsItemHovered()
+            && ImGui.IsItemActive()
             && ImGui.IsMouseDown(ImGuiMouseButton.Right)
-            && !ImGui.IsAnyItemActive();
-        if (panning)
+            && !ImGeo.IsAnyHandleActive();
+
+        var mouseDelta = ImGeo.ScaleToView(ImGui.GetIO().MouseDelta);
+        var mouseThreshold = mouseDelta.LengthSquared() > 1e-6;
+        if (panning && shiftHeld)
         {
-            var delta = ImGeo.ScaleToView(ImGui.GetIO().MouseDelta);
-            if (delta.LengthSquared() > 1e-6f)
+            canvas.AddOrbitIndicator(pivotXZ, subjectXZ);
+            _dragStartPivotAngle ??= (subjectXZ - pivotXZ).Atan2();
+        }
+        else
+        {
+            _dragStartPivotAngle = null;
+        }
+
+        if (panning && mouseThreshold)
+        {
+            if (shiftHeld)
             {
-                var pivotDelta = delta.InsertY(0);
-                _camera.Translate(pivotDelta);
-                changed = true;
+                var newMouse = ImGeo.MouseViewPos();
+                var oldMouse =
+                    newMouse - ImGeo.ScaleToView(ImGui.GetMouseDragDelta(ImGuiMouseButton.Right));
+
+                var pivotAngle = (subjectXZ - pivotXZ).Atan2();
+                var oldPivotAngle = _dragStartPivotAngle ?? pivotAngle;
+                var mouseAngle = (subjectXZ - newMouse).Atan2();
+                var oldMouseAngle = (subjectXZ - oldMouse).Atan2();
+                var newAngle = (subjectXZ - newMouse).Atan2();
+
+                var theta = newAngle - oldMouseAngle + oldPivotAngle - pivotAngle;
+                _camera.RotateEverything(theta);
             }
+            else
+            {
+                _camera.Translate(mouseDelta.InsertY(0));
+            }
+            changed = true;
         }
 
         // Mousewheel zoom.
         if (ImGui.IsItemHovered())
         {
-            var delta = ImGui.GetIO().MouseWheel;
-            if (delta != 0)
+            var wheelDelta = ImGui.GetIO().MouseWheel;
+            if (wheelDelta != 0)
             {
-                _camera.AdjustCameraDistance(-delta);
+                _camera.AdjustCameraDistance(-wheelDelta);
                 changed = true;
             }
         }

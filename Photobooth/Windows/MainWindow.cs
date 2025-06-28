@@ -46,10 +46,6 @@ public class MainWindow : Window, IDisposable
             MaximumSize = new(600, float.MaxValue),
         };
 
-        // In auto-open mode we want to feel like part of the portrait editor,
-        // so we should let ESC dismiss _it_, not us, and close then.
-        RespectCloseHotkey = !_plugin.Configuration.AutoOpenWhenEditingPortrait;
-
         var settingsButton = new TitleBarButton()
         {
             Icon = FontAwesomeIcon.Cog,
@@ -81,22 +77,22 @@ public class MainWindow : Window, IDisposable
         _lightingPanel.Reset();
     }
 
-    private float Scale => ImGuiHelpers.GlobalScale;
-
-    private unsafe void SnapToBannerEditor()
+    private unsafe Vector2? SnapToBannerEditor()
     {
         if (_plugin.Configuration.AttachWindow is not WindowAttachment setting)
-            return;
+        {
+            return null;
+        }
 
-        var editor = (AddonBannerEditor*)Plugin.GameGui.GetAddonByName("BannerEditor");
-        if (editor == null)
-            return;
+        var editor = Editor.GetAddon();
+        if (editor == null || !Editor.IsAddonOpen())
+            return null;
         var col = editor->RootNode;
         if (col == null)
-            return;
+            return null;
         var device = Device.Instance();
         if (device == null)
-            return;
+            return null;
 
         var top = col->GetYFloat();
         var left = col->GetXFloat();
@@ -130,26 +126,27 @@ public class MainWindow : Window, IDisposable
             _ => left + editorWidth + 10,
         };
 
-        Position = new Vector2(x, top);
+        return new Vector2(x, top);
+    }
+
+    public override bool DrawConditions()
+    {
+        return Editor.IsAddonReady();
     }
 
     public override void Draw()
     {
-        SnapToBannerEditor();
-
         var e = Editor.Current();
+
+        if (!Editor.IsAddonOpen())
+        {
+            Toggle();
+            return;
+        }
 
         if (e.IsValid)
         {
-            // Load manual portrait changes.
-            _portrait.CopyData(e);
-            // Load manual camera changes and perhaps track moving character.
-            _camera.Load(e);
-
-            _lightingPanel.Draw();
-            _animationPanel.Draw();
-            _cameraPanel.Draw();
-            _facingPanel.Draw();
+            Opened(e);
         }
         else
         {
@@ -160,8 +157,29 @@ public class MainWindow : Window, IDisposable
         ImGui.SetWindowSize(new(ImGui.GetWindowSize().X, height));
     }
 
+    private void Opened(Editor e)
+    {
+        // If the banner editor is open and we're in automatic mode, we
+        // hide when it does and want ESC to close it, not us.
+        RespectCloseHotkey = !_plugin.Configuration.AutoOpenWhenEditingPortrait;
+        Position = SnapToBannerEditor();
+
+        // Load manual portrait changes.
+        _portrait.CopyData(e);
+        // Load manual camera changes and perhaps track moving character.
+        _camera.Load(e);
+
+        _lightingPanel.Draw();
+        _animationPanel.Draw();
+        _cameraPanel.Draw();
+        _facingPanel.Draw();
+    }
+
     private unsafe void Unopened()
     {
+        RespectCloseHotkey = true;
+        Position = null;
+
         ImGui.TextUnformatted("Create or edit a portrait to get started.");
         ImGui.Spacing();
 

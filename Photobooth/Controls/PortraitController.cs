@@ -128,6 +128,10 @@ public class PortraitController : IDisposable
                 progress -= CorrectionFactor(Framework.Instance()->FrameRate);
                 e.ToggleAnimationPlayback(false);
             }
+            else
+            {
+                e.ToggleAnimationPlayback(true);
+            }
 
             e.SetAnimationProgress(progress);
         }

@@ -16,7 +16,12 @@ public static partial class ImPB
     /// </summary>
     public static bool NudgeFloat(string label, ref float value, float min, float max, float step)
     {
-        step = ImGui.IsKeyDown(ImGuiKey.ModShift) ? step / 10 : step;
+        var shift = ImGui.IsKeyDown(ImGuiKey.ModShift);
+        var ctrl = ImGui.IsKeyDown(ImGuiKey.ModCtrl);
+        step *=
+            shift ? 0.1f
+            : ctrl ? 10f
+            : 1f;
 
         var repeatMs = 100;
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();

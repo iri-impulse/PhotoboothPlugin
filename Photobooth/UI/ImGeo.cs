@@ -22,6 +22,7 @@ public static partial class ImGeo
 
     private static uint _DeactivatedHandleId;
     private static uint _ActiveHandleId;
+    private static Vector2 _ActiveHandleOffset;
 
     public static ImDrawListPtr GetActiveDrawList()
     {
@@ -46,7 +47,8 @@ public static partial class ImGeo
 
     public static void BeginCanvas(string label, Vector2 min_xy, Vector2 max_xy, Vector2 size)
     {
-        ImGui.InvisibleButton(label, size, ImGuiButtonFlags.MouseButtonLeft);
+        var buttons = ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight;
+        ImGui.InvisibleButton(label, size, buttons);
         var top_left = ImGui.GetItemRectMin();
         var screen_size = ImGui.GetItemRectSize();
 
@@ -64,6 +66,7 @@ public static partial class ImGeo
         {
             _DeactivatedHandleId = _ActiveHandleId;
             _ActiveHandleId = 0;
+            _ActiveHandleOffset = Vector2.Zero;
         }
         else
         {
@@ -171,47 +174,61 @@ public static partial class ImGeo
         return ImGui.IsItemDeactivated() && _DeactivatedHandleId == _CurrentHandle.Id;
     }
 
+    public static bool IsAnyHandleActive()
+    {
+        return _ActiveHandleId != 0;
+    }
+
     // Creating handles.
     private static bool DragHandle(Handle handle, ref Vector2 position, uint col = 0xFFFFFFFF)
     {
         // Set current/active handle info.
         _CurrentHandle = handle;
         var hovered = IsHandleHovered();
-        if (hovered && ImGui.IsItemActivated())
+        if (
+            ImGui.IsItemActivated()
+            && ImGui.IsMouseDown(ImGuiMouseButton.Left)
+            && handle.HitTest(MouseViewPos())
+        )
         {
             _ActiveHandleId = handle.Id;
+            _ActiveHandleOffset = MouseViewPos() - handle.Position;
         }
-
-        var opacity = (byte)((col & 0xFF000000) >> 0x18);
-        var color = col & 0x00FFFFFF;
-        var activeCol = color | ((opacity / 2u) << 0x18);
-        var hoverCol = color | ((opacity / 3u) << 0x18);
-
         var active = IsHandleActive();
-        if (active)
-        {
-            handle.SetCursor();
-            handle.DrawFill(activeCol);
-        }
-        else if (hovered)
-        {
-            handle.SetCursor();
-            handle.DrawFill(hoverCol);
-        }
-        handle.Draw(col);
 
-        if (IsHandleActive())
+        DrawHandle(handle, hovered, active, col);
+        if (hovered || active)
+        {
+            handle.SetCursor();
+        }
+
+        if (active)
         {
             var mouse = MouseViewPos();
             var drag = mouse - handle.Position;
             if (drag.LengthSquared() > 1e-6)
             {
-                position = mouse;
+                position = mouse - _ActiveHandleOffset;
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static void DrawHandle(Handle handle, bool hovered, bool active, uint col = 0xFFFFFFFF)
+    {
+        var opacity = (byte)((col & 0xFF000000) >> 0x18);
+        var color = col & 0x00FFFFFF;
+        var activeCol = color | ((opacity / 2u) << 0x18);
+        var hoverCol = color | ((opacity / 3u) << 0x18);
+
+        if (hovered || active)
+        {
+            handle.DrawFill(active ? activeCol : hoverCol);
+        }
+
+        handle.Draw(col);
     }
 
     public static bool DragHandleCircle(
@@ -231,6 +248,23 @@ public static partial class ImGeo
         };
 
         return DragHandle(handle, ref position, col);
+    }
+
+    public static void DummyHandleCircle(
+        Vector2 position,
+        float size,
+        bool hovered = false,
+        bool active = false,
+        uint col = 0xFFFFFFFF
+    )
+    {
+        var handle = new Handle("dummy")
+        {
+            Shape = Handle.HandleShape.Circle,
+            Position = position,
+            Size = size,
+        };
+        DrawHandle(handle, hovered, active, col);
     }
 
     // ImGui drawing functions, scaled and clipped to the viewport.
@@ -383,6 +417,13 @@ public static partial class ImGeo
     }
 
     // csharpier-ignore-end
+}
+
+public enum ImGeoHandleStatus
+{
+    None,
+    Hovered,
+    Active,
 }
 
 internal class Viewport

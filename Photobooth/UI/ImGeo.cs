@@ -185,31 +185,24 @@ public static partial class ImGeo
         // Set current/active handle info.
         _CurrentHandle = handle;
         var hovered = IsHandleHovered();
-        if (hovered && ImGui.IsItemActivated() && ImGui.IsMouseDown(ImGuiMouseButton.Left))
+        if (
+            ImGui.IsItemActivated()
+            && ImGui.IsMouseDown(ImGuiMouseButton.Left)
+            && handle.HitTest(MouseViewPos())
+        )
         {
             _ActiveHandleId = handle.Id;
             _ActiveHandleOffset = MouseViewPos() - handle.Position;
         }
-
-        var opacity = (byte)((col & 0xFF000000) >> 0x18);
-        var color = col & 0x00FFFFFF;
-        var activeCol = color | ((opacity / 2u) << 0x18);
-        var hoverCol = color | ((opacity / 3u) << 0x18);
-
         var active = IsHandleActive();
-        if (active)
-        {
-            handle.SetCursor();
-            handle.DrawFill(activeCol);
-        }
-        else if (hovered)
-        {
-            handle.SetCursor();
-            handle.DrawFill(hoverCol);
-        }
-        handle.Draw(col);
 
-        if (IsHandleActive())
+        DrawHandle(handle, hovered, active, col);
+        if (hovered || active)
+        {
+            handle.SetCursor();
+        }
+
+        if (active)
         {
             var mouse = MouseViewPos();
             var drag = mouse - handle.Position;
@@ -221,6 +214,21 @@ public static partial class ImGeo
         }
 
         return false;
+    }
+
+    private static void DrawHandle(Handle handle, bool hovered, bool active, uint col = 0xFFFFFFFF)
+    {
+        var opacity = (byte)((col & 0xFF000000) >> 0x18);
+        var color = col & 0x00FFFFFF;
+        var activeCol = color | ((opacity / 2u) << 0x18);
+        var hoverCol = color | ((opacity / 3u) << 0x18);
+
+        if (hovered || active)
+        {
+            handle.DrawFill(active ? activeCol : hoverCol);
+        }
+
+        handle.Draw(col);
     }
 
     public static bool DragHandleCircle(
@@ -240,6 +248,23 @@ public static partial class ImGeo
         };
 
         return DragHandle(handle, ref position, col);
+    }
+
+    public static void DummyHandleCircle(
+        Vector2 position,
+        float size,
+        bool hovered = false,
+        bool active = false,
+        uint col = 0xFFFFFFFF
+    )
+    {
+        var handle = new Handle("dummy")
+        {
+            Shape = Handle.HandleShape.Circle,
+            Position = position,
+            Size = size,
+        };
+        DrawHandle(handle, hovered, active, col);
     }
 
     // ImGui drawing functions, scaled and clipped to the viewport.
@@ -392,6 +417,13 @@ public static partial class ImGeo
     }
 
     // csharpier-ignore-end
+}
+
+public enum ImGeoHandleStatus
+{
+    None,
+    Hovered,
+    Active,
 }
 
 internal class Viewport

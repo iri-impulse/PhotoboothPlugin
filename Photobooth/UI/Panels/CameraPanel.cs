@@ -35,9 +35,9 @@ internal class CameraPanel(
 
     public override string? Help { get; } =
         "Left click: drag a handle to move the camera (circle) or target (arrow).\n"
-        + "Right click: drag anywhere to slide the whole camera setup around.\n"
-        + "Mousewheel: adjust camera distance.\n\n"
-        + "Hold shift when dragging to lock distance and only apply rotation.\n";
+        + "Right click: drag anywhere to slide the whole camera setup around.\n\n"
+        + "Hold shift when dragging to lock distance and only apply rotation.\n"
+        + "Shift right-drag will appear to rotate the character in place.";
 
     public override void Reset()
     {
@@ -255,15 +255,6 @@ internal class CameraPanel(
         using var canvas = new CameraCanvas();
         var shiftHeld = ImGui.IsKeyDown(ImGuiKey.ModShift);
 
-        if (_config.ShowCoordinates)
-        {
-            canvas.AddPositionText(cameraXZ, targetXZ);
-        }
-
-        // Camera view wedge.
-        canvas.AddCameraWedge(cameraXZ, _camera.Direction.LonRadians, _camera.FoV);
-        canvas.AddCameraApparatus(cameraXZ, pivotXZ, targetXZ);
-
         // Draggable sun for light angle.
         var lightDirection = _portrait.GetDirectionalLightDirection();
         if (canvas.DragSun(ref lightDirection))
@@ -271,9 +262,6 @@ internal class CameraPanel(
             _portrait.SetDirectionalLightDirection(lightDirection);
             changed = true;
         }
-
-        // Character center indicator.
-        canvas.AddPlayerMarker(subjectXZ, e.CharacterDirection());
 
         // Camera target handle.
         var newTargetXZ = targetXZ;
@@ -299,11 +287,6 @@ internal class CameraPanel(
         if (shiftHeld && (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive()))
         {
             canvas.AddOrbitIndicator(cameraXZ, targetXZ);
-        }
-
-        if (shiftHeld && (ImGeo.IsHandleHovered() || ImGeo.IsHandleActive()))
-        {
-            canvas.AddOrbitIndicator(pivotXZ, subjectXZ);
         }
 
         // Right click pan/rotate.
@@ -359,6 +342,17 @@ internal class CameraPanel(
                 changed = true;
             }
         }
+
+        // Draw things that might have changed.
+        if (_config.ShowCoordinates)
+        {
+            canvas.AddPositionText(newCameraXZ, targetXZ);
+        }
+
+        canvas.AddCameraWedge(_camera.Camera.XZ(), _camera.Direction.LonRadians, _camera.FoV);
+        canvas.AddLightMarker(lightDirection);
+        canvas.AddCameraApparatus(_camera.Camera.XZ(), _camera.Pivot.XZ(), _camera.TargetXZ);
+        canvas.AddPlayerMarker(subjectXZ, e.CharacterDirection());
 
         return changed;
     }

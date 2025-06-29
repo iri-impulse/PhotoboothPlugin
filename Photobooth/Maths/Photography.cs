@@ -2,10 +2,13 @@ using System;
 
 namespace Photobooth.Maths;
 
+/// <summary>
+/// Camera stuff having to do with real-world cameras.
+/// </summary>
 internal static class Photography
 {
-    public const float FullFrameX = 36f;
-    public const float FullFrameY = 24f;
+    public const float FullFrameX = 36f; // mm
+    public const float FullFrameY = 24f; // mm
 
     // Field of view equation:
     // AFOV = 2 * atan(sensorSize / (2 * focalLength))

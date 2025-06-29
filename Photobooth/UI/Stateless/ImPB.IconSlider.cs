@@ -8,7 +8,7 @@ namespace Photobooth.UI.Stateless;
 public static partial class ImPB
 {
     /// <summary>
-    /// A slider with an icon next to it, and possibly a tooltip on the icon.
+    /// A SliderFloat with an icon next to it, and possibly a tooltip.
     /// </summary>
     public static bool IconSliderFloat(
         string label,
@@ -26,6 +26,9 @@ public static partial class ImPB
         return ImGui.SliderFloat(label, ref value, min, max, format);
     }
 
+    /// <summary>
+    /// A SliderInt with an icon next to it, and possibly a tooltip.
+    /// </summary>
     public static bool IconSliderInt(
         string label,
         FontAwesomeIcon icon,

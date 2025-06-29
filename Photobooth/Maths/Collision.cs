@@ -112,11 +112,5 @@ internal static class Collision
                 && point.Z >= Min.Z
                 && point.Z <= Max.Z;
         }
-
-        public readonly Vector3 Closest(Vector3 point, out bool inside)
-        {
-            inside = Contains(point);
-            return inside ? point : Vector3.Clamp(point, Min, Max);
-        }
     }
 }

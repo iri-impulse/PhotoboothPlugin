@@ -52,12 +52,6 @@ public record struct SphereLL
         _longitude = lon;
     }
 
-    public SphereLL()
-    {
-        _latitude = 0f;
-        _longitude = 0f;
-    }
-
     private SphereLL(float lat, float lon)
     {
         _latitude = lat;
@@ -90,10 +84,5 @@ public record struct SphereLL
             -MathF.Sin(LatRadians),
             MathF.Cos(LatRadians) * MathF.Cos(LonRadians)
         );
-    }
-
-    public override readonly string ToString()
-    {
-        return $"SphereLL(Lat: {LatDegrees}°, Lon: {LonDegrees}°)";
     }
 }

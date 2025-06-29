@@ -1,21 +1,26 @@
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Common.Math;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace Photobooth.GameExt;
 
-public unsafe class Funcs
+public unsafe class Functions
 {
-    private static Funcs? _Instance;
+    private static Functions? _Instance;
 
-    public static Funcs Instance() => _Instance ??= new Funcs();
+    public static Functions Instance() => _Instance ??= new Functions();
 
-    private Funcs()
+    private Functions()
     {
         Plugin.GameInteropProvider.InitializeFromAttributes(this);
     }
 
+    /// <summary>
+    /// The currently-playing main ActionTimeline of a TimelineContainer. This
+    /// is not quite always the ActionTimeline of the first slot, because for a
+    /// frame or two after the timeline is reset this will have a value already
+    /// even if the animation hasn't started.
+    /// </summary>
     [Signature("E8 ?? ?? ?? ?? 0F B7 C8 85 C9 0F 84")]
     public readonly delegate* unmanaged<
         TimelineContainer*,
@@ -36,28 +41,4 @@ public unsafe class Funcs
         Vector3*,
         uint,
         Vector3*> Character_GetPartPosition;
-}
-
-public static unsafe class FuncExtensions
-{
-    private static Funcs F => Funcs.Instance();
-
-    public static ushort GetActionTimelineRowId(this ref TimelineContainer tc)
-    {
-        fixed (TimelineContainer* ptr = &tc)
-        {
-            return F.TimelineContainer_GetActionTimelineRowId(ptr);
-        }
-    }
-
-    public static void GetPartPosition(this ref Character chara, out Vector3 outPos, uint unk)
-    {
-        fixed (Character* ptr = &chara)
-        {
-            fixed (Vector3* pos = &outPos)
-            {
-                F.Character_GetPartPosition(ptr, pos, unk);
-            }
-        }
-    }
 }

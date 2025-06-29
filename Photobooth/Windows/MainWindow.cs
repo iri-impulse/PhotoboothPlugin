@@ -2,7 +2,6 @@ using System;
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
-using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -159,8 +158,8 @@ public class MainWindow : Window, IDisposable
 
     private void Opened(Editor e)
     {
-        // If the banner editor is open and we're in automatic mode, we
-        // hide when it does and want ESC to close it, not us.
+        // If the banner editor is open and we're in automatic mode, we hide
+        // ourselves when it closes and want ESC to close it, not us.
         RespectCloseHotkey = !_plugin.Configuration.AutoOpenWhenEditingPortrait;
         Position = SnapToBannerEditor();
 

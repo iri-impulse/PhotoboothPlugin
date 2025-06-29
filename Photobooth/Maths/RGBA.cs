@@ -20,9 +20,4 @@ public readonly record struct RGBA(byte R, byte G, byte B, byte A = 255)
     {
         return new Vector4(R / 255f, G / 255f, B / 255f, A / 255f);
     }
-
-    public override string ToString()
-    {
-        return $"RGBA({R}, {G}, {B}, {A})";
-    }
 }

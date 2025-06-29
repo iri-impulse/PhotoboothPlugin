@@ -157,7 +157,9 @@ internal class CameraPanel(
         if (ImGui.IsItemHovered())
         {
             ImGui.SetTooltip(
-                "Move the camera closer or father when changing the lens's field of view,\nattempting to keep the same portion of the image in-frame."
+                "Move the camera closer or father when changing the lens's field of view,\n"
+                    + "attempting to keep the same portion of the image in-frame. Effect is more\n"
+                    + "precise if the camera is exactly facing the character first."
             );
         }
 
@@ -289,47 +291,10 @@ internal class CameraPanel(
             canvas.AddOrbitIndicator(cameraXZ, targetXZ);
         }
 
-        // Right click pan/rotate.
-        var panning =
-            !changed
-            && ImGui.IsItemActive()
-            && ImGui.IsMouseDown(ImGuiMouseButton.Right)
-            && !ImGeo.IsAnyHandleActive();
-
-        var mouseDelta = ImGeo.ScaleToView(ImGui.GetIO().MouseDelta);
-        var mouseThreshold = mouseDelta.LengthSquared() > 1e-6;
-        if (panning && shiftHeld)
+        // Allow canvas-wide panning and rotation, if not doing something else.
+        if (!changed)
         {
-            canvas.AddOrbitIndicator(pivotXZ, subjectXZ);
-            _dragStartPivotAngle ??= (subjectXZ - pivotXZ).Atan2();
-        }
-        else
-        {
-            _dragStartPivotAngle = null;
-        }
-
-        if (panning && mouseThreshold)
-        {
-            if (shiftHeld)
-            {
-                var newMouse = ImGeo.MouseViewPos();
-                var oldMouse =
-                    newMouse - ImGeo.ScaleToView(ImGui.GetMouseDragDelta(ImGuiMouseButton.Right));
-
-                var pivotAngle = (subjectXZ - pivotXZ).Atan2();
-                var oldPivotAngle = _dragStartPivotAngle ?? pivotAngle;
-                var mouseAngle = (subjectXZ - newMouse).Atan2();
-                var oldMouseAngle = (subjectXZ - oldMouse).Atan2();
-                var newAngle = (subjectXZ - newMouse).Atan2();
-
-                var theta = newAngle - oldMouseAngle + oldPivotAngle - pivotAngle;
-                _camera.RotateEverything(theta);
-            }
-            else
-            {
-                _camera.Translate(mouseDelta.InsertY(0));
-            }
-            changed = true;
+            changed |= PanOrRotate(canvas);
         }
 
         // Mousewheel zoom.
@@ -355,5 +320,58 @@ internal class CameraPanel(
         canvas.AddPlayerMarker(subjectXZ, e.CharacterDirection());
 
         return changed;
+    }
+
+    /// <summary>
+    /// Right click to pan, shift-right click to rotate.
+    /// </summary>
+    private bool PanOrRotate(CameraCanvas canvas)
+    {
+        var shiftHeld = ImGui.IsKeyDown(ImGuiKey.ModShift);
+        var pivotXZ = _camera.Pivot.XZ();
+        var subjectXZ = _camera.Subject.XZ();
+
+        // Right click pan/rotate.
+        var panning =
+            ImGui.IsItemActive()
+            && ImGui.IsMouseDown(ImGuiMouseButton.Right)
+            && !ImGeo.IsAnyHandleActive();
+
+        var mouseDelta = ImGeo.ScaleToView(ImGui.GetIO().MouseDelta);
+        var mouseThreshold = mouseDelta.LengthSquared() > 1e-6;
+        if (panning && shiftHeld)
+        {
+            canvas.AddOrbitIndicator(pivotXZ, subjectXZ);
+            _dragStartPivotAngle ??= (subjectXZ - pivotXZ).Atan2();
+        }
+        else
+        {
+            _dragStartPivotAngle = null;
+        }
+
+        if (panning && mouseThreshold)
+        {
+            if (shiftHeld)
+            {
+                var newMouse = ImGeo.MouseViewPos();
+                var oldMouse =
+                    newMouse - ImGeo.ScaleToView(ImGui.GetMouseDragDelta(ImGuiMouseButton.Right));
+
+                var pivotAngle = (subjectXZ - pivotXZ).Atan2();
+                var oldPivotAngle = _dragStartPivotAngle ?? pivotAngle;
+                var oldMouseAngle = (subjectXZ - oldMouse).Atan2();
+                var newAngle = (subjectXZ - newMouse).Atan2();
+
+                var theta = newAngle - oldMouseAngle + oldPivotAngle - pivotAngle;
+                _camera.RotateEverything(theta);
+            }
+            else
+            {
+                _camera.Translate(mouseDelta.InsertY(0));
+            }
+            return true;
+        }
+
+        return false;
     }
 }

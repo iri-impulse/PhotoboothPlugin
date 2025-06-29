@@ -157,7 +157,9 @@ internal class CameraPanel(
         if (ImGui.IsItemHovered())
         {
             ImGui.SetTooltip(
-                "Move the camera closer or father when changing the lens's field of view,\nattempting to keep the same portion of the image in-frame."
+                "Move the camera closer or father when changing the lens's field of view,\n"
+                    + "attempting to keep the same portion of the image in-frame. Effect is more\n"
+                    + "precise if the camera is exactly facing the character first."
             );
         }
 

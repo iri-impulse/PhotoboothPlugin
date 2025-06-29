@@ -11,7 +11,8 @@ using Photobooth.GameExt;
 namespace Photobooth.Controls;
 
 /// <summary>
-/// Utilities for interacting with the open portrait editor.
+/// Utilities for interacting with the open portrait editor. This is kind of a
+/// grab bag of "stuff that knows too much about the game internals".
 /// </summary>
 public unsafe ref struct Editor
 {
@@ -95,7 +96,7 @@ public unsafe ref struct Editor
         Portrait->PendingAnimationPauseState = paused;
         Portrait->IsAnimationPauseStatePending = true;
 
-        var addon = (AddonBannerEditor*)Plugin.GameGui.GetAddonByName("BannerEditor");
+        var addon = GetAddon();
         if (addon == null)
             return;
 
@@ -115,6 +116,12 @@ public unsafe ref struct Editor
             return -1;
 
         return sched->TimelineController.GetAnimationDuration();
+    }
+
+    public ushort GetBannerTimeline()
+    {
+        AssertValid();
+        return State->BannerEntry.BannerTimeline;
     }
 
     /// <summary>
@@ -237,7 +244,7 @@ public unsafe ref struct Editor
 
     public readonly void UpdateUI(in ExportedPortraitData data)
     {
-        var addon = (AddonBannerEditor*)Plugin.GameGui.GetAddonByName("BannerEditor");
+        var addon = GetAddon();
         if (addon == null)
         {
             return;

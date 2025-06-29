@@ -63,13 +63,6 @@ internal class CustomCamera
         SetTargetXZ(CameraXZ + DistanceXZ * new Vector2(c, s));
     }
 
-    public void SetCameraViaYaw(float yaw)
-    {
-        var (s, c) = MathF.SinCos(yaw);
-        var newCameraXZ = TargetXZ + DistanceXZ * new Vector2(c, s);
-        Camera = new(newCameraXZ.X, Camera.Y, newCameraXZ.Y);
-    }
-
     public void Translate(Vector3 delta)
     {
         Camera += delta;

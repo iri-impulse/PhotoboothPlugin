@@ -63,7 +63,7 @@ public static partial class ImPB
 
         dl.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), textStr);
 
-        // Kind of inelegant to have the help here but at least it keeps
+        // Kind of inelegant to have the help here but at least it keeps the
         // knowledge of the header sizing one place.
         if (!string.IsNullOrEmpty(help))
         {

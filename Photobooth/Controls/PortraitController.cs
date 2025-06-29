@@ -197,22 +197,9 @@ public class PortraitController : IDisposable
             portrait->SetCameraZoom(Data.CameraZoom);
         }
 
-        if (_changes.Take(PortraitChanges.CameraPosition | PortraitChanges.CameraTarget))
-        {
-            fixed (ExportedPortraitData* data = &Data)
-            {
-                portrait->SetCameraPosition(&data->CameraPosition, &data->CameraTarget);
-            }
-        }
-
         if (_changes.Take(PortraitChanges.ImageRotation))
         {
             portrait->ImageRotation = Data.ImageRotation;
-        }
-
-        if (_changes.Take(PortraitChanges.BannerBg))
-        {
-            portrait->SetBackground(Data.BannerBg);
         }
 
         return changed;
@@ -309,23 +296,6 @@ public class PortraitController : IDisposable
         _changes |= PortraitChanges.DirectionalLightColor;
     }
 
-    public Vector3 GetCameraTarget()
-    {
-        return new Vector3(
-            (float)Data.CameraTarget.X,
-            (float)Data.CameraTarget.Y,
-            (float)Data.CameraTarget.Z
-        );
-    }
-
-    public void SetCameraTarget(Vector3 target)
-    {
-        Data.CameraTarget.X = (Half)target.X;
-        Data.CameraTarget.Y = (Half)target.Y;
-        Data.CameraTarget.Z = (Half)target.Z;
-        _changes |= PortraitChanges.CameraTarget;
-    }
-
     public short GetImageRotation()
     {
         return Data.ImageRotation;
@@ -341,11 +311,6 @@ public class PortraitController : IDisposable
         _changes |= PortraitChanges.ImageRotation;
     }
 
-    public byte GetCameraZoom()
-    {
-        return Data.CameraZoom;
-    }
-
     // This is duplicative with the one in CustomCamera, but right now only
     // PortraitController is wired up to send changes to the default UI.
     public void SetCameraZoom(byte zoom)
@@ -356,14 +321,16 @@ public class PortraitController : IDisposable
 
     private static byte ClampBrightness(byte brightness)
     {
-        // The dimmest you can make either light source is 20.
+        // The dimmest you can make either light source is 20... though unlike
+        // almost every other way you can mess up a portrait, it actually does
+        // display and even save correctly if you don't enforce the limit!
         return Math.Clamp(brightness, (byte)20, (byte)255);
     }
 
-    // LB-type (non-emote) animations need some babying. They only
-    // display right while the animation is unpaused... which makes
-    // the visible state one frame ahead of the requested progress.
-    // So we force-unpause it and play it a little behind instead.
+    // LB-type (non-emote) animations need some babying. They only display
+    // correctly while the animation is unpaused... which makes the visible
+    // state a bit ahead of the requested progress. So force-unpause it and
+    // play it a little behind to compensate.
     private static float CorrectionFactor(float fps)
     {
         if (UseManualCorrectionFactor)
@@ -374,7 +341,7 @@ public class PortraitController : IDisposable
         // I fit a curve to this, after experimenting with the manual slider
         // in the debug window to determine best values at various FPS. This
         // cannot possibly be right but I can't guess what underlying cause
-        // produces this curve.
+        // produces this particular curve.
 
         // 60 -> 1.25
         // 54 -> 1.33
@@ -401,14 +368,11 @@ public enum PortraitChanges
     DirectionalLightDirection = 1 << 3,
     EyeDirection = 1 << 4,
     HeadDirection = 1 << 5,
-    CameraPosition = 1 << 6,
-    CameraTarget = 1 << 7,
-    CameraZoom = 1 << 8,
-    ImageRotation = 1 << 9,
-    Pose = 1 << 10,
-    Expression = 1 << 11,
-    AnimationProgress = 1 << 12,
-    BannerBg = 1 << 13,
+    CameraZoom = 1 << 6,
+    ImageRotation = 1 << 7,
+    Pose = 1 << 8,
+    Expression = 1 << 9,
+    AnimationProgress = 1 << 10,
 }
 
 internal static class Extensions

@@ -17,8 +17,8 @@ internal class AnimationPanel(PortraitController portrait)
 
     private static readonly float _NudgeAmount = 0.1f;
     public override string Help { get; } =
-        "Ctrl+Click the slider to type an exact timestamp, or\n"
-        + "hold Shift for a smaller increment with the +/- buttons.";
+        "Hold Shift to go slower or Control to go faster when clicking or holding\n"
+        + "the +/- buttons. To type an exact time, Control+Click the slider.";
 
     public override void Reset()
     {
@@ -63,9 +63,9 @@ internal class AnimationPanel(PortraitController portrait)
     /// us from directly observing the animation duration. Keep the old one, so
     /// we don't change the slider maximum while dragging.
     /// </summary>
-    private unsafe float DebounceDuration(Editor e)
+    private float DebounceDuration(Editor e)
     {
-        var pose = e.State->BannerEntry.BannerTimeline;
+        var pose = e.GetBannerTimeline();
 
         if (pose != _lastPose)
         {

@@ -419,13 +419,6 @@ public static partial class ImGeo
     // csharpier-ignore-end
 }
 
-public enum ImGeoHandleStatus
-{
-    None,
-    Hovered,
-    Active,
-}
-
 internal class Viewport
 {
     public Vector2 ViewRectMin { get; internal set; }

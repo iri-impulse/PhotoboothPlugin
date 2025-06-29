@@ -3,10 +3,14 @@ using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using Lumina.Excel.Sheets;
 using Photobooth.Controls;
-using Photobooth.UI.Stateless;
 
 namespace Photobooth.Windows;
 
+/// <summary>
+/// This isn't documented and could be left out of release builds, but the
+/// correction factor slider at minimum is helpful for crowdsourcing the
+/// animation progress correction factor curve data.
+/// </summary>
 internal class DebugWindow : Window
 {
     public DebugWindow()
@@ -66,6 +70,15 @@ internal class DebugWindow : Window
         }
     }
 
+    /// <summary>
+    /// For debugging, a widget that makes a copyable textbox for a pointer.
+    /// </summary>
+    public static void CopyAddress(string label, nint address)
+    {
+        var addressString = $"0x{address:X}";
+        ImGui.InputText(label, ref addressString, 32, ImGuiInputTextFlags.ReadOnly);
+    }
+
     private unsafe void DumpTimeline(Editor e)
     {
         var editor = e.Agent;
@@ -109,12 +122,12 @@ internal class DebugWindow : Window
         _Mem.CharaViewPortrait = (nint)portrait;
 
         var pSched = _MemGCHandle.AddrOfPinnedObject() + 0;
-        ImPB.CopyAddress("SchedulerTimeline (p)", pSched);
+        CopyAddress("SchedulerTimeline (p)", pSched);
 
         var pCont = _MemGCHandle.AddrOfPinnedObject() + 8;
-        ImPB.CopyAddress("TimelineContainer (p)", pCont);
+        CopyAddress("TimelineContainer (p)", pCont);
 
         var pPortrait = _MemGCHandle.AddrOfPinnedObject() + 16;
-        ImPB.CopyAddress("CharaViewPortrait (p)", pPortrait);
+        CopyAddress("CharaViewPortrait (p)", pPortrait);
     }
 }

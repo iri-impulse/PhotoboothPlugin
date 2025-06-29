@@ -250,13 +250,6 @@ internal class CameraController
         RecomputeCustom();
     }
 
-    public void SetPivotPositionXZ(Vector2 pivotXZ)
-    {
-        var newPivot = pivotXZ.InsertY(Pivot.Y);
-        newPivot = Vector3.Clamp(newPivot, PivotMin, PivotMax);
-        Builtin.SetPivot(newPivot);
-    }
-
     public void RotateEverything(float angle)
     {
         var rotation = Matrix3x2.CreateRotation(angle, Subject.XZ());

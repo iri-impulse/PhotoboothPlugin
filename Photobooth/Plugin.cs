@@ -104,7 +104,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         if (Configuration.AutoOpenWhenEditingPortrait && !MainWindow.IsOpen)
         {
-            MainWindow.Toggle();
+            MainWindow.AutoOpen();
         }
     }
 
@@ -128,7 +128,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public void ToggleConfigUI() => ConfigWindow.Toggle();
 
-    public void ToggleMainUI() => MainWindow.Toggle();
+    public void ToggleMainUI() => MainWindow.ForceToggle();
 
     public void ToggleDebugUI() => DebugWindow.Toggle();
 }

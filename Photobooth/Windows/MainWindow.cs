@@ -29,6 +29,18 @@ public class MainWindow : Window, IDisposable
     // flip sides when moving the banner editor unless there's no more space.
     private WindowAttachment _attachment = WindowAttachment.Right;
 
+    // If we're opening automatically, we'll want to do things like "wait for
+    // the portrait to load to avoid flicker" and "close automatically", but if
+    // the user opened the window by hand we should just open and not be fancy.
+
+    private OpenReason _openedBy = OpenReason.Manual;
+
+    private enum OpenReason
+    {
+        Manual,
+        Automatic,
+    }
+
     public MainWindow(Plugin plugin)
         : base($"{Plugin.PluginName}##{Plugin.PluginName}_mainwindow")
     {
@@ -74,6 +86,21 @@ public class MainWindow : Window, IDisposable
         _cameraPanel.Reset();
         _facingPanel.Reset();
         _lightingPanel.Reset();
+    }
+
+    public void AutoOpen()
+    {
+        if (!IsOpen)
+        {
+            _openedBy = OpenReason.Automatic;
+            Toggle();
+        }
+    }
+
+    public void ForceToggle()
+    {
+        _openedBy = OpenReason.Manual;
+        Toggle();
     }
 
     private unsafe Vector2? SnapToBannerEditor()
@@ -130,20 +157,27 @@ public class MainWindow : Window, IDisposable
 
     public override bool DrawConditions()
     {
-        return Editor.IsAddonReady();
+        if (_openedBy == OpenReason.Manual)
+        {
+            return true;
+        }
+        else
+        {
+            return Editor.IsAddonReady();
+        }
     }
 
     public override void Draw()
     {
-        var e = Editor.Current();
-
-        if (!Editor.IsAddonOpen())
+        // Automatically close only if we automatically opened.
+        if (_openedBy == OpenReason.Automatic && !Editor.IsAddonOpen())
         {
             Toggle();
             return;
         }
 
-        if (e.IsValid)
+        var e = Editor.Current();
+        if (e.IsValid && Editor.IsAddonOpen())
         {
             Opened(e);
         }

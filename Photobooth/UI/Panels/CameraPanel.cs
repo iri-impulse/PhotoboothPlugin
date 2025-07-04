@@ -315,9 +315,11 @@ internal class CameraPanel(
         }
 
         canvas.AddCameraWedge(_camera.Camera.XZ(), _camera.Direction.LonRadians, _camera.FoV);
+        canvas.AddPlayerMarker(subjectXZ, e.CharacterDirection());
         canvas.AddLightMarker(lightDirection);
         canvas.AddCameraApparatus(_camera.Camera.XZ(), _camera.Pivot.XZ(), _camera.TargetXZ);
-        canvas.AddPlayerMarker(subjectXZ, e.CharacterDirection());
+
+        canvas.AddLegend();
 
         return changed;
     }

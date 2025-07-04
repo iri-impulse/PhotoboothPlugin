@@ -2,7 +2,7 @@
 <Project Sdk="Dalamud.NET.Sdk/12.0.2">
     <PropertyGroup>
         <!-- Convention: versions ending in 0 are release versions. -->
-        <PluginVersion>0.0.1.2</PluginVersion>
+        <PluginVersion>0.0.2.0</PluginVersion>
     </PropertyGroup>
     <PropertyGroup>
         <Description>Enhances the portrait editor.</Description>

@@ -1,7 +1,7 @@
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Photobooth.Controls;
 using Photobooth.Maths;
 using Photobooth.UI.Canvas;

@@ -1,7 +1,7 @@
 using System.Numerics;
 using Dalamud.Interface.Utility.Raii;
-using ImGuiNET;
-using F = ImGuiNET.ImGuiColorEditFlags;
+using Dalamud.Bindings.ImGui;
+using F = Dalamud.Bindings.ImGui.ImGuiColorEditFlags;
 
 namespace Photobooth.UI.Stateless;
 

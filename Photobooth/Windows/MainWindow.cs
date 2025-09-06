@@ -5,7 +5,7 @@ using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Photobooth.Controls;
 using Photobooth.UI.Panels;
 using static Photobooth.Configuration;

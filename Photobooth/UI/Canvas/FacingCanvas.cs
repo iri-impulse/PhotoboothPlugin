@@ -3,7 +3,7 @@ using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Photobooth.Maths;
 
 namespace Photobooth.UI.Canvas;

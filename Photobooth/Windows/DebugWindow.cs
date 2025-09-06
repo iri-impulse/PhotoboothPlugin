@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 using Dalamud.Interface.Windowing;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 using Photobooth.Controls;
 

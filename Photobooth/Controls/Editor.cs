@@ -48,7 +48,7 @@ public unsafe ref struct Editor
 
     public static unsafe AddonBannerEditor* GetAddon()
     {
-        return (AddonBannerEditor*)Plugin.GameGui.GetAddonByName("BannerEditor");
+        return (AddonBannerEditor*)Plugin.GameGui.GetAddonByName("BannerEditor").Address;
     }
 
     public static bool IsAddonOpen()

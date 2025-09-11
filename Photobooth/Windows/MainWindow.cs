@@ -1,11 +1,11 @@
 using System;
 using System.Numerics;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using ImGuiNET;
 using Photobooth.Controls;
 using Photobooth.UI.Panels;
 using static Photobooth.Configuration;

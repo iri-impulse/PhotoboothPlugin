@@ -1,9 +1,9 @@
 using System;
 using System.Numerics;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using ImGuiNET;
 using static Photobooth.Configuration;
 
 namespace Photobooth.Windows;

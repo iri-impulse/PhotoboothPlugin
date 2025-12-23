@@ -213,7 +213,7 @@ public class MainWindow : Window, IDisposable
         RespectCloseHotkey = true;
         Position = null;
 
-        ImGui.TextUnformatted("Create or edit a portrait to get started.");
+        ImGui.Text("Create or edit a portrait to get started.");
         ImGui.Spacing();
 
         if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Portrait, "Portrait List"))

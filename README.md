@@ -2,6 +2,8 @@
 
 A Dalamud plugin for FFXIV that provides additional controls when editing a portrait.
 
+[![Download count](https://img.shields.io/endpoint?url=https://qzysathwfhebdai6xgauhz4q7m0mzmrf.lambda-url.us-east-1.on.aws/Photobooth)](https://github.com/iri-descant/PhotoboothPlugin)
+
 ## Features
 
 - Slide animation progress forward and backward, or step through frame by frame.
@@ -17,11 +19,21 @@ A Dalamud plugin for FFXIV that provides additional controls when editing a port
 
 #### Q: This looks neat! How do I install it?
 
-Install [XIVLauncher](https://goatcorp.github.io/), and ~~eagerly await this plugin's release in the testing channel, which you can enable in the "Experimental" tab of `/xlsettings`~~ stay tuned as I figure this out for the first time.
+Install [XIVLauncher](https://goatcorp.github.io/), and search for "Photobooth" in the plugin list once you're in game.
 
 #### Q: Can I create portraits that would be impossible in the default UI?
 
 No. Any portrait you make with this plugin could've been made with just the default UI, given patience, a good understanding of the camera, and good luck with the pause button.
+
+## Tips and Tricks
+
+Hover the (?) icon in the section headers for more information on the controls. Notably, on the top-down camera view:
+
+- Shift + left-click dragging the camera rotates it around the pivot, without changing the distance.
+- Right-click drag moves the camera and the pivot together.
+- Shift + right-click drag rotates the camera and the pivot around the character, which effectively turns the character in place.
+
+Remember, you can still use the regular portrait window controls for the things it does a good job at!
 
 ## Credits
 

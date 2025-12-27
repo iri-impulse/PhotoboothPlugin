@@ -1,7 +1,7 @@
 name: Photobooth
 author: iri
 repo_url: https://github.com/iri-impulse/PhotoboothPlugin
-punchline: |
+punchline: |-
   Advanced controls for portraits & adventurer plates.
 description: |-
   Take your portrait & adventurer plate game to the next level with this companion panel for the portrait editor.
@@ -12,5 +12,7 @@ description: |-
   • More intuitive controls for lighting color and angle.
 tags:
   - portrait
-  - adventurer plates
+  - adventurer plate
   - fashion
+  - enhancement
+  - qol

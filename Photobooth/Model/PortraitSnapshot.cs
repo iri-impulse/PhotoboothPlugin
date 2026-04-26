@@ -15,11 +15,20 @@ namespace Photobooth.Model
 
         public string SerializedSnapshot { get; set;  }
 
-        public PortraitSnapshot(uint classJobId, string classJobName, string serializedSnapshot)
+        public string Race { get; set; }
+
+        public string TribeName { get; set; }
+
+        public string Gender { get; set; }
+
+        public PortraitSnapshot(uint classJobId, string classJobName, string race, string tribeName, string gender, string serializedSnapshot)
         {
             TakenAt = DateTime.Now;
             ClassJobId = classJobId;
             ClassJobName = classJobName;
+            Race = race;
+            TribeName = tribeName;
+            Gender = gender;
             SerializedSnapshot = serializedSnapshot;
         }
     }

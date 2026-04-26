@@ -1,3 +1,4 @@
+using Dalamud.Game.Player;
 using Dalamud.Interface;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
@@ -50,6 +51,10 @@ namespace Photobooth.Controls
                 IncludeFields = true
             });
 
+            Sex sex = Plugin.PlayerState.Sex;
+            var sexText = Plugin.PlayerState.Sex.ToString();
+            var raceText = sex == Sex.Male ? Plugin.PlayerState.Race.Value.Masculine.ToString() : Plugin.PlayerState.Race.Value.Feminine.ToString();
+            var tribeText = sex == Sex.Male ? Plugin.PlayerState.Tribe.Value.Masculine.ToString() : Plugin.PlayerState.Tribe.Value.Feminine.ToString();
             var snapshots = Snapshots;
             Plugin.Log.Warning($"Data to save: {serializedSnapshotData}");
 
@@ -61,7 +66,7 @@ namespace Photobooth.Controls
             var existing = snapshots[classJobId].FirstOrDefault(snapshot => snapshot.Id == id);
             if (existing == null)
             {
-                var newSnapshot = new PortraitSnapshot(classJobId, classJobName, serializedSnapshotData);
+                var newSnapshot = new PortraitSnapshot(classJobId, classJobName, sexText, raceText, tribeText, serializedSnapshotData);
                 snapshots[classJobId].Add(newSnapshot);
                 Plugin.Log.Info($"Portrait for job {classJobName} created: {serializedSnapshotData}");
 

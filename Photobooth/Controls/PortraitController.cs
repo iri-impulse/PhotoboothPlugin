@@ -18,6 +18,10 @@ public class PortraitController : IDisposable
     {
         Plugin.Log.Warning(Data.Expression.ToString() + " " + Data.CameraTarget.ToString());
         var classJobId = Editor.Current().Portrait->PortraitCharacterData.ClassJobId;
+        Plugin.Log.Warning(Plugin.PlayerState.Race.Value.Masculine.ToString());
+        Plugin.Log.Warning(Plugin.PlayerState.Sex.ToString());
+        Plugin.Log.Warning(Plugin.PlayerState.Tribe.Value.Masculine.ToString());
+        
         var classJobName = Plugin.DataManager.GetExcelSheet<ClassJob>().GetRow(classJobId).NameEnglish.ToString();
         Plugin.Log.Warning($"Class job id: {classJobId}: {classJobName}");
         Plugin.SnapshotDataController.StoreCurrentSnapshot(Data, classJobId, id);

@@ -45,6 +45,9 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService]
     internal static IFramework Framework { get; private set; } = null!;
 
+    [PluginService]
+    internal static IPlayerState PlayerState { get; private set; } = null!;
+
     public Configuration Configuration { get; init; }
 
     public readonly WindowSystem WindowSystem = new($"{PluginName}Plugin");

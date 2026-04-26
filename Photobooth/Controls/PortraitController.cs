@@ -3,8 +3,8 @@ using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
 using Photobooth.Maths;
+using Photobooth.Model;
 using System;
-using System.Numerics;
 using System.Text.Json;
 
 namespace Photobooth.Controls;
@@ -12,19 +12,11 @@ namespace Photobooth.Controls;
 public class PortraitController : IDisposable
 {
     public ExportedPortraitData Data;
-    private string? _snapshot = null;
 
-    public unsafe void TakeOrUpdateSnapshot(Guid id)
+    public unsafe void TakeSnapshot()
     {
-        Plugin.Log.Warning(Data.Expression.ToString() + " " + Data.CameraTarget.ToString());
-        var classJobId = Editor.Current().Portrait->PortraitCharacterData.ClassJobId;
-        Plugin.Log.Warning(Plugin.PlayerState.Race.Value.Masculine.ToString());
-        Plugin.Log.Warning(Plugin.PlayerState.Sex.ToString());
-        Plugin.Log.Warning(Plugin.PlayerState.Tribe.Value.Masculine.ToString());
-        
-        var classJobName = Plugin.DataManager.GetExcelSheet<ClassJob>().GetRow(classJobId).NameEnglish.ToString();
-        Plugin.Log.Warning($"Class job id: {classJobId}: {classJobName}");
-        Plugin.SnapshotDataController.StoreCurrentSnapshot(Data, classJobId, id);
+        var classJobId = Editor.Current().Portrait->PortraitCharacterData.ClassJobId;        
+        Plugin.SnapshotDataController.StoreCurrentSnapshot(Data, classJobId);
     }
 
     public unsafe uint CurrentClassJobId() {
@@ -33,66 +25,29 @@ public class PortraitController : IDisposable
         return editor.Portrait->PortraitCharacterData.ClassJobId;
     }
 
-    public unsafe void RestoreSnapshot(Guid id)
+    internal unsafe void RestoreSnapshot(PortraitSnapshot snapShot)
     {
-        if (_snapshot == null)
+
+        if (snapShot == null)
         {
             Plugin.Log.Warning("No snapshot to restore");
             return;
         }
 
-        ExportedPortraitData data = JsonSerializer.Deserialize<ExportedPortraitData>(_snapshot, new JsonSerializerOptions
+        ExportedPortraitData data = JsonSerializer.Deserialize<ExportedPortraitData>(snapShot.SerializedSnapshot, new JsonSerializerOptions
         {
             IncludeFields = true,
         });
-        Plugin.Log.Warning($"Restoring data: {JsonSerializer.Serialize(data, new JsonSerializerOptions
-        {
-            IncludeFields = true,
-        })}");
-        Plugin.Log.Warning($"Restoring data: {_snapshot}");
 
-        //_changes = (PortraitChanges)0xFF;
-        Plugin.Log.Warning(_changes.ToString());
-        //Data = data;
         var e = Editor.Current();
         if (!e.IsValid)
         {
             return;
         }
 
-        //var changed = ApplyChanges(e, true);
         var portrait = e.Portrait;
-        //Plugin.Log.Warning("Job selected is " + e.Character->ClassJob);
-        //portrait->SetBackground(Data.BannerBg);
-        //fixed (HalfVector4* cameraPosition = &Data.CameraPosition)
-        //{
-        //    fixed (HalfVector4* cameraTarget = &Data.CameraTarget)
-        //    {
-        //        portrait->SetCameraPosition(cameraPosition, cameraTarget);
+        portrait->ImportPortraitData(&data);
 
-        //    }
-        //}
-
-        //fixed (ExportedPortraitData* pData = &data)
-        //{
-            portrait->ImportPortraitData(&data);
-        //}
-
-
-        //portrait->SetCameraPosition(&Data.CameraPosition, Data.CameraTarget);
-        //this.SetImageRotation(data.ImageRotation);
-
-        //portrait->SetPoseTimed(data.BannerTimeline, data.AnimationProgress);
-
-        //ExportedPortraitData data = System.Text.Json.JsonSerializer.Deserialize<ExportedPortraitData>(_snapshot, new JsonSerializerOptions() { IncludeFields = true });
-        //Plugin.Log.Warning(data.BannerBg.ToString());
-        //Plugin.Log.Warning(_snapshot);
-        //var allFlagsSet = 2 ^ 11 - 1;
-        //_changes = (PortraitChanges)allFlagsSet;
-        //Data.BannerBg = data.BannerBg;
-        //Data = data;
-        //Editor e = Editor.Current();
-        //ApplyChanges(e);
     }
 
     private PortraitChanges _changes = PortraitChanges.None;

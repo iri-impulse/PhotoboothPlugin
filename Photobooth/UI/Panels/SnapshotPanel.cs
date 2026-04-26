@@ -1,11 +1,9 @@
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Components;
 using Photobooth.Controls;
 using Photobooth.Model;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Photobooth.UI.Panels
 {
@@ -17,10 +15,7 @@ namespace Photobooth.UI.Panels
         protected override void DrawBody()
         {
 
-            if (ImGui.Button("Take snapshot"))
-            {
-                _portrait.TakeOrUpdateSnapshot(Guid.NewGuid());
-            }
+
             var snapshots = Plugin.SnapshotDataController.Snapshots;
             var currentClassJobId = _portrait.CurrentClassJobId();
             if (snapshots.ContainsKey(currentClassJobId))
@@ -28,10 +23,13 @@ namespace Photobooth.UI.Panels
                 DrawSnapshopTable(snapshots[currentClassJobId]);
             }
 
-            if (ImGui.Button("Restore snapshot"))
+            if (ImGui.Button("Take snapshot"))
             {
-                var guid = Guid.NewGuid(); //temporary
-                _portrait.RestoreSnapshot(guid);
+                _portrait.TakeSnapshot();
+            }
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.SetTooltip("Save the current look of the portrait. Border and accent are not saved.");
             }
         }
 
@@ -40,15 +38,16 @@ namespace Photobooth.UI.Panels
             if (ImGui.BeginTable("Saved snapshots", 4, ImGuiTableFlags.Resizable))
             {
                 
-                ImGui.TableSetupColumn("Date", ImGuiTableColumnFlags.WidthStretch, 0.2f);
-                ImGui.TableSetupColumn("Clan", ImGuiTableColumnFlags.WidthStretch, 0.7f);
-                ImGui.TableSetupColumn("Gender", ImGuiTableColumnFlags.WidthStretch, 0.1f);
-                ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthStretch, 0.3f);
+                ImGui.TableSetupColumn("Date", ImGuiTableColumnFlags.WidthStretch, 0.3f);
+                ImGui.TableSetupColumn("Clan", ImGuiTableColumnFlags.WidthStretch, 0.4f);
+                ImGui.TableSetupColumn("Gender", ImGuiTableColumnFlags.WidthStretch, 0.2f);
+                ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthStretch, 0.1f);
                 ImGui.TableHeadersRow();
 
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 var currentClassJobIdd = _portrait.CurrentClassJobId();
+                int index = 0;
                 foreach (var snapshot in snaps)
                 {
                     ImGui.TableNextRow();
@@ -59,7 +58,15 @@ namespace Photobooth.UI.Panels
                     ImGui.TableNextColumn();
                     ImGui.TextUnformatted(snapshot.Gender);
                     ImGui.TableNextColumn();
-                    ImGui.TextUnformatted("buttons");
+                    if (ImGuiComponents.IconButton($"Apply##{index}", FontAwesomeIcon.ArrowsSpin))
+                    {
+                        _portrait.RestoreSnapshot(snapshot);
+                    }
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip("Apply saved snapshot to the portrait.");
+                    }
+                    index++;
                 }
 
                 ImGui.EndTable();

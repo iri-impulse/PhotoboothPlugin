@@ -1,5 +1,4 @@
 using Dalamud.Game.Player;
-using Dalamud.Interface;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
 using Photobooth.Model;
@@ -7,9 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 
 namespace Photobooth.Controls
 {
@@ -24,7 +21,9 @@ namespace Photobooth.Controls
         private string _filePath = Path.Combine(Plugin.PluginInterface.ConfigDirectory.FullName, FileName);
         private Dictionary<uint, List<PortraitSnapshot>> _snapshotsInternal = new Dictionary<uint, List<PortraitSnapshot>>();
         private bool _snapshotsAreLoaded = false;
-        public Dictionary<uint, List<PortraitSnapshot>> Snapshots { get
+        public Dictionary<uint, List<PortraitSnapshot>> Snapshots
+        {
+            get
             {
                 if (!_snapshotsAreLoaded)
                 {
@@ -33,9 +32,8 @@ namespace Photobooth.Controls
                 }
 
                 return _snapshotsInternal;
-            } }
-
-
+            }
+        }
 
         public void StoreCurrentSnapshot(ExportedPortraitData data, uint classJobId)
         {

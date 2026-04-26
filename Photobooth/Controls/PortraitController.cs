@@ -27,6 +27,12 @@ public class PortraitController : IDisposable
         Plugin.SnapshotDataController.StoreCurrentSnapshot(Data, classJobId, id);
     }
 
+    public unsafe uint CurrentClassJobId() {
+        var editor = Editor.Current();
+        if (!editor.IsValid) return 0;
+        return editor.Portrait->PortraitCharacterData.ClassJobId;
+    }
+
     public unsafe void RestoreSnapshot(Guid id)
     {
         if (_snapshot == null)

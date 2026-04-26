@@ -66,7 +66,7 @@ namespace Photobooth.Controls
             var existing = snapshots[classJobId].FirstOrDefault(snapshot => snapshot.Id == id);
             if (existing == null)
             {
-                var newSnapshot = new PortraitSnapshot(classJobId, classJobName, sexText, raceText, tribeText, serializedSnapshotData);
+                var newSnapshot = new PortraitSnapshot(classJobId, classJobName, raceText, tribeText, sexText, serializedSnapshotData);
                 snapshots[classJobId].Add(newSnapshot);
                 Plugin.Log.Info($"Portrait for job {classJobName} created: {serializedSnapshotData}");
 

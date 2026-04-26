@@ -17,11 +17,12 @@ namespace Photobooth.UI.Panels
 
             if (ImGui.Button("Take snapshot"))
             {
-                _portrait.TakeSnapshot();
+                _portrait.TakeOrUpdateSnapshot(Guid.NewGuid());
             }
             if (ImGui.Button("Restore snapshot"))
             {
-                _portrait.RestoreSnapshot();
+                var guid = Guid.NewGuid(); //temporary
+                _portrait.RestoreSnapshot(guid);
             }
         }
     }

@@ -27,6 +27,7 @@ namespace Photobooth.Controls
             {
                 if (!_snapshotsAreLoaded)
                 {
+                    Plugin.Log.Info("Snapshots loaded");
                     LoadSnapshots();
                 }
 
@@ -35,8 +36,14 @@ namespace Photobooth.Controls
 
 
 
+        public void StoreCurrentSnapshot(ExportedPortraitData data, uint classJobId)
+        {
+            StoreCurrentSnapshot(data, classJobId, Guid.Empty);
+        }
+
         public unsafe void StoreCurrentSnapshot(ExportedPortraitData data, uint classJobId, Guid id)
         {
+            Plugin.Log.Warning("Storing current snapshot");
             var classJobName = Plugin.DataManager.GetExcelSheet<ClassJob>().GetRow(classJobId).NameEnglish.ToString();
             var serializedSnapshotData = System.Text.Json.JsonSerializer.Serialize(data, new JsonSerializerOptions
             {
@@ -44,6 +51,8 @@ namespace Photobooth.Controls
             });
 
             var snapshots = Snapshots;
+            Plugin.Log.Warning($"Data to save: {serializedSnapshotData}");
+
             if (!snapshots.ContainsKey(classJobId))
             {
                 snapshots[classJobId] = new List<PortraitSnapshot>();
@@ -63,6 +72,8 @@ namespace Photobooth.Controls
                 existing.SerializedSnapshot = serializedSnapshotData;
                 Plugin.Log.Info($"Portrait for job {classJobName} updated: {serializedSnapshotData}");
             }
+
+            File.WriteAllText(_filePath, JsonSerializer.Serialize(snapshots));
         }
 
         private Dictionary<uint, List<PortraitSnapshot>> LoadSnapshots()

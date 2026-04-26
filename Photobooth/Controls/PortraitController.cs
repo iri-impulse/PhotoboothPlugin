@@ -14,21 +14,16 @@ public class PortraitController : IDisposable
     public ExportedPortraitData Data;
     private string? _snapshot = null;
 
-    public unsafe void TakeSnapshot()
+    public unsafe void TakeOrUpdateSnapshot(Guid id)
     {
-        _snapshot = System.Text.Json.JsonSerializer.Serialize(Data, new JsonSerializerOptions
-        {
-            IncludeFields = true
-        });
-        Plugin.Log.Warning(_snapshot);
         Plugin.Log.Warning(Data.Expression.ToString() + " " + Data.CameraTarget.ToString());
         var classJobId = Editor.Current().Portrait->PortraitCharacterData.ClassJobId;
         var classJobName = Plugin.DataManager.GetExcelSheet<ClassJob>().GetRow(classJobId).NameEnglish.ToString();
         Plugin.Log.Warning($"Class job id: {classJobId}: {classJobName}");
-        SnapshotDataController.StoreCurrentSnapshot(Data, Editor.Current().Portrait->PortraitCharacterData.ClassJobId);
+        Plugin.SnapshotDataController.StoreCurrentSnapshot(Data, classJobId, id);
     }
 
-    public unsafe void RestoreSnapshot()
+    public unsafe void RestoreSnapshot(Guid id)
     {
         if (_snapshot == null)
         {

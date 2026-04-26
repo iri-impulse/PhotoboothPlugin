@@ -5,6 +5,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using Photobooth.Controls;
 using Photobooth.Windows;
 
 namespace Photobooth;
@@ -47,6 +48,9 @@ public sealed class Plugin : IDalamudPlugin
     public Configuration Configuration { get; init; }
 
     public readonly WindowSystem WindowSystem = new($"{PluginName}Plugin");
+
+    internal static SnapshotDataController SnapshotDataController { get; private set; }
+
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
     private DebugWindow DebugWindow { get; init; }
@@ -63,6 +67,7 @@ public sealed class Plugin : IDalamudPlugin
         WindowSystem.AddWindow(MainWindow);
         WindowSystem.AddWindow(DebugWindow);
 
+        SnapshotDataController = new SnapshotDataController();
         CommandManager.AddHandler(
             CommandName,
             new CommandInfo(OnCommand)

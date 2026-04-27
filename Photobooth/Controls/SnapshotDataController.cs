@@ -21,7 +21,8 @@ namespace Photobooth.Controls
         private string _filePath = Path.Combine(Plugin.PluginInterface.ConfigDirectory.FullName, FileName);
         private Dictionary<uint, List<PortraitSnapshot>> _snapshotsInternal = new Dictionary<uint, List<PortraitSnapshot>>();
         private bool _snapshotsAreLoaded = false;
-        public Dictionary<uint, List<PortraitSnapshot>> Snapshots
+
+        internal Dictionary<uint, List<PortraitSnapshot>> Snapshots
         {
             get
             {
@@ -35,12 +36,12 @@ namespace Photobooth.Controls
             }
         }
 
-        public void StoreCurrentSnapshot(ExportedPortraitData data, uint classJobId)
+        internal void StoreCurrentSnapshot(ExportedPortraitData data, uint classJobId)
         {
             StoreCurrentSnapshot(data, classJobId, Guid.Empty);
         }
 
-        public unsafe void StoreCurrentSnapshot(ExportedPortraitData data, uint classJobId, Guid id)
+        internal void StoreCurrentSnapshot(ExportedPortraitData data, uint classJobId, Guid id)
         {
             Plugin.Log.Warning("Storing current snapshot");
             var classJobName = Plugin.DataManager.GetExcelSheet<ClassJob>().GetRow(classJobId).NameEnglish.ToString();

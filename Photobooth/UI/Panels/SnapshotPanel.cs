@@ -14,8 +14,6 @@ namespace Photobooth.UI.Panels
 
         protected override void DrawBody()
         {
-
-
             var snapshots = Plugin.SnapshotDataController.Snapshots;
             var currentClassJobId = _portrait.CurrentClassJobId();
             if (snapshots.ContainsKey(currentClassJobId))
@@ -37,7 +35,6 @@ namespace Photobooth.UI.Panels
         {
             if (ImGui.BeginTable("Saved snapshots", 4, ImGuiTableFlags.Resizable))
             {
-                
                 ImGui.TableSetupColumn("Date", ImGuiTableColumnFlags.WidthStretch, 0.3f);
                 ImGui.TableSetupColumn("Clan", ImGuiTableColumnFlags.WidthStretch, 0.4f);
                 ImGui.TableSetupColumn("Gender", ImGuiTableColumnFlags.WidthStretch, 0.2f);
@@ -56,7 +53,7 @@ namespace Photobooth.UI.Panels
                     ImGui.TableNextColumn();
                     ImGui.TextUnformatted(snapshot.TribeName);
                     ImGui.TableNextColumn();
-                    ImGui.TextUnformatted(snapshot.Gender);
+                    ImGui.TextUnformatted(snapshot.Sex);
                     ImGui.TableNextColumn();
                     if (ImGuiComponents.IconButton($"Apply##{index}", FontAwesomeIcon.ArrowsSpin))
                     {
@@ -70,7 +67,6 @@ namespace Photobooth.UI.Panels
                 }
 
                 ImGui.EndTable();
-
             }
         }
     }

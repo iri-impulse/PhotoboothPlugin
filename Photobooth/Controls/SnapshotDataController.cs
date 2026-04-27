@@ -43,7 +43,7 @@ namespace Photobooth.Controls
 
         internal void StoreCurrentSnapshot(ExportedPortraitData data, uint classJobId, Guid id)
         {
-            Plugin.Log.Warning("Storing current snapshot");
+            Plugin.Log.Info("Storing current snapshot");
             var classJobName = Plugin.DataManager.GetExcelSheet<ClassJob>().GetRow(classJobId).NameEnglish.ToString();
             var serializedSnapshotData = System.Text.Json.JsonSerializer.Serialize(data, new JsonSerializerOptions
             {
@@ -55,7 +55,7 @@ namespace Photobooth.Controls
             var raceText = sex == Sex.Male ? Plugin.PlayerState.Race.Value.Masculine.ToString() : Plugin.PlayerState.Race.Value.Feminine.ToString();
             var tribeText = sex == Sex.Male ? Plugin.PlayerState.Tribe.Value.Masculine.ToString() : Plugin.PlayerState.Tribe.Value.Feminine.ToString();
             var snapshots = Snapshots;
-            Plugin.Log.Warning($"Data to save: {serializedSnapshotData}");
+            Plugin.Log.Debug($"Data to save: {serializedSnapshotData}");
 
             if (!snapshots.ContainsKey(classJobId))
             {

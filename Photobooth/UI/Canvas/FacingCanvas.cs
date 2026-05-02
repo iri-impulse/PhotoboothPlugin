@@ -12,7 +12,7 @@ namespace Photobooth.UI.Canvas;
 /// A canvas widget for picking a "half-direction", that is, a point on a
 /// front-facing hemisphere, in terms of latitude and longitude.
 /// </summary>
-public class FacingCanvas : IDisposable
+public ref struct FacingCanvas : IDisposable
 {
     private const float AspectRatio = 0.8f;
 
@@ -29,15 +29,15 @@ public class FacingCanvas : IDisposable
     private Vector2 _viewPadding;
     private Vector2 _viewSize => _bottomRight - _topLeft;
 
-    private readonly ImRaii.Id? _id = null;
-    private readonly ImRaii.IEndObject? _group = null;
-    private readonly ImGeo.Canvas? _canvas = null;
+    private readonly ImRaii.IdDisposable _id;
+    private readonly ImRaii.GroupDisposable _group;
+    private readonly ImGeo.Canvas? _canvas;
 
     public void Dispose()
     {
         _canvas?.Dispose();
-        _group?.Dispose();
-        _id?.Dispose();
+        _group.Dispose();
+        _id.Dispose();
     }
 
     public FacingCanvas(string label, Vector2 topLeft, Vector2 bottomRight)

@@ -17,11 +17,11 @@ public static partial class ImPB
         var style = ImGui.GetStyle();
         var headerColor = ImGui.GetColorU32(ImGuiCol.Header);
 
-        using var _ = ImRaii.PushId(text);
-        using var colors = new ImRaii.Color();
-        colors.Push(ImGuiCol.Button, headerColor);
-        colors.Push(ImGuiCol.ButtonHovered, headerColor);
-        colors.Push(ImGuiCol.ButtonActive, headerColor);
+        using var _id = ImRaii.PushId(text);
+        using var _colors = ImRaii
+            .PushColor(ImGuiCol.Button, headerColor)
+            .Push(ImGuiCol.ButtonHovered, headerColor)
+            .Push(ImGuiCol.ButtonActive, headerColor);
 
         var w = ImGui.GetContentRegionAvail().X + style.WindowPadding.X;
         var h = ImGui.GetTextLineHeightWithSpacing() + 2 * style.FramePadding.Y;
@@ -69,7 +69,6 @@ public static partial class ImPB
         {
             using (ImRaii.PushFont(UiBuilder.IconFont))
             {
-                using var helpColors = new ImRaii.Color();
                 var helpIcon = FontAwesomeIcon.Question.ToIconString();
                 var helpSize = ImGui.CalcTextSize(helpIcon);
 
@@ -83,10 +82,11 @@ public static partial class ImPB
                     ImGui.GetItemRectMin().Y
                 );
 
-                helpColors.Push(ImGuiCol.Button, transparent);
-                helpColors.Push(ImGuiCol.ButtonHovered, transparent);
-                helpColors.Push(ImGuiCol.ButtonActive, transparent);
-                helpColors.Push(ImGuiCol.Text, helpColor);
+                using var _helpColors = ImRaii
+                    .PushColor(ImGuiCol.Button, transparent)
+                    .Push(ImGuiCol.ButtonActive, transparent)
+                    .Push(ImGuiCol.ButtonHovered, transparent)
+                    .Push(ImGuiCol.Text, helpColor);
 
                 var prevCursor = ImGui.GetCursorScreenPos();
                 ImGui.SetCursorScreenPos(helpPos);

@@ -187,7 +187,7 @@ public static partial class ImGeo
         var hovered = IsHandleHovered();
         if (
             ImGui.IsItemActivated()
-            && ImGui.IsMouseDown(ImGuiMouseButton.Left)
+            && ImGui.IsMouseDown(ImGuiMouseButton.Left | ImGuiMouseButton.Right)
             && handle.HitTest(MouseViewPos())
         )
         {

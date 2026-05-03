@@ -2,6 +2,8 @@ using System;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Colors;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using Photobooth.Controls;
 using Photobooth.Maths;
@@ -32,6 +34,12 @@ internal class CameraPanel(
     // We keep track of the original pivot angle so if there's another valid
     // position you can accumulate angular delta and jump to it.
     private float? _dragStartPivotAngle = null;
+
+    private bool _editingManually = false;
+    private bool _changedManually = false;
+    private float _manualCameraX = 0f;
+    private float _manualCameraZ = 0f;
+    private float _manualCameraTheta = 0f;
 
     public override string? Help { get; } =
         "Left click: drag a handle to move the camera (circle) or target (arrow).\n"
@@ -68,7 +76,9 @@ internal class CameraPanel(
 
         // Camera canvas area.
         changed |= CameraViewport(e);
+        changed |= ManualCameraControls();
 
+        // Independent camera controls.
         changed |= CameraWidgets();
 
         if (changed)
@@ -76,6 +86,106 @@ internal class CameraPanel(
             _camera.Save(e);
             e.SetHasChanged(true);
         }
+    }
+
+    private bool ManualCameraControls()
+    {
+        using var color = ImRaii
+            .PushColor(ImGuiCol.Button, 0x00000000, !_editingManually)
+            .Push(ImGuiCol.FrameBg, 0x00000000, !_editingManually);
+
+        var discard = false;
+        var apply = false;
+
+        var paddingX = ImGui.GetStyle().FramePadding.X;
+        var spacingX = ImGui.GetStyle().ItemSpacing.X;
+        var labelWidth = ImGui.CalcTextSize("A° ").X;
+        var interWidth = ImGui.CalcTextSize("=").X;
+        var inputWidth = ImGui.CalcTextSize("-000.0").X + paddingX * 2;
+        var iconWidth = ImGuiComponents.GetIconButtonWithTextWidth(FontAwesomeIcon.Check, "");
+
+        var interSize = new Vector2(interWidth, 0);
+
+        var totalWidth =
+            3 * (labelWidth + inputWidth) + 2 * iconWidth + 2 * interWidth + 5 * spacingX;
+        var availableWidth = ImGui.GetContentRegionAvail().X;
+
+        if (availableWidth > totalWidth)
+        {
+            ImGui.Dummy(new Vector2(availableWidth - totalWidth, 0));
+        }
+
+        if (!_editingManually)
+        {
+            ImGui.BeginDisabled();
+        }
+
+        ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
+        ImGui.SetNextItemWidth(labelWidth);
+        ImGui.Text("X:");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(inputWidth);
+        _changedManually |= ImGui.InputFloat("##manual_x", ref _manualCameraX, 0, 0, "%.1f"u8);
+
+        ImGui.SameLine();
+        ImGui.Dummy(interSize);
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(labelWidth);
+        ImGui.Text("Y:");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(inputWidth);
+        _changedManually |= ImGui.InputFloat("##manual_y", ref _manualCameraZ, 0, 0, "%.1f"u8);
+
+        ImGui.SameLine();
+        ImGui.Dummy(interSize);
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(labelWidth);
+        ImGui.Text("A°");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(inputWidth);
+        _changedManually |= ImGui.InputFloat("##angle", ref _manualCameraTheta, 0, 0, "%.1f"u8);
+
+        if (!_editingManually)
+        {
+            ImGui.EndDisabled();
+        }
+
+        if (_editingManually)
+        {
+            ImGui.SameLine();
+            apply = ImGuiComponents.IconButton(FontAwesomeIcon.Check);
+            ImGui.SameLine();
+            discard = ImGuiComponents.IconButton(FontAwesomeIcon.Times);
+        }
+        else
+        {
+            ImGui.SameLine();
+            ImGui.Dummy(new Vector2(iconWidth - spacingX, 0));
+            ImGui.SameLine();
+            using (ImRaii.PushStyle(ImGuiStyleVar.Alpha, ImGui.GetStyle().Alpha * 0.5f))
+            {
+                _editingManually = ImGuiComponents.IconButton(FontAwesomeIcon.PencilAlt);
+            }
+            _manualCameraX = _camera.Camera.X;
+            _manualCameraZ = _camera.Camera.Z;
+            _manualCameraTheta = 360f * _camera.Direction.LonRadians / MathF.Tau;
+        }
+
+        if (discard)
+        {
+            _editingManually = false;
+        }
+
+        if (apply)
+        {
+            _camera.SetCameraPositionXZ(new Vector2(_manualCameraX, _manualCameraZ));
+            _camera.SetCameraYawRadians(MathF.Tau * _manualCameraTheta / 360f);
+            _editingManually = false;
+            return _changedManually;
+        }
+
+        return false;
     }
 
     private bool CameraWidgets()

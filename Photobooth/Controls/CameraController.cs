@@ -284,6 +284,13 @@ internal class CameraController
         Custom.SetPitch(newPitch);
     }
 
+    public void SetCameraYawRadians(float newYaw)
+    {
+        var newDirection = SphereLL.FromRadians(Direction.LatRadians, newYaw);
+        Builtin.SetDirection(newDirection);
+        Custom.SetTargetViaYaw(newYaw);
+    }
+
     /// <summary>
     /// Recompute the custom camera position to match the state of the built-in
     /// camera. The distance between the camera and the target is preserved,

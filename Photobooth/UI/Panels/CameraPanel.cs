@@ -37,9 +37,9 @@ internal class CameraPanel(
 
     private bool _editingManually = false;
     private bool _changedManually = false;
-    private float _manualCameraX = 0f;
-    private float _manualCameraZ = 0f;
-    private float _manualCameraTheta = 0f;
+    private float _manualX = 0f;
+    private float _manualZ = 0f;
+    private float _manualYaw = 0f;
 
     public override string? Help { get; } =
         "Left click: drag a handle to move the camera (circle) or target (arrow).\n"
@@ -89,49 +89,34 @@ internal class CameraPanel(
 
     private void ManualCameraControls()
     {
-        using var color = ImRaii
-            .PushColor(ImGuiCol.Button, 0x00000000, !_editingManually)
-            .Push(ImGuiCol.FrameBg, 0x00000000, !_editingManually);
+        var editing = _editingManually;
+        using var color = ImRaii.PushColor(ImGuiCol.FrameBg, 0x00000000, !editing);
+        using var disabled = ImRaii.Disabled(!editing);
 
-        var boxWidth = ImGui.CalcTextSize("-XXX.X").X;
-        var textWidth = ImGui.CalcTextSize(" °A").X;
+        var fullWidth = ImGui.CalcItemWidth();
         var iconWidth = ImGuiComponents.GetIconButtonWithTextWidth(FontAwesomeIcon.Ad, "");
+        var spacing = ImGui.GetStyle().ItemSpacing.X;
 
         ImGui.Dummy(new Vector2(iconWidth, 0));
-        ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X);
+        ImGui.SameLine(0, spacing);
 
-        if (!_editingManually)
-        {
-            ImGui.BeginDisabled();
-        }
+        var inputWidth = (fullWidth - iconWidth - 3 * spacing) / 3;
 
         using (ImRaii.Table("##manual_camera", 3))
         {
             ImGui.TableNextRow();
 
             ImGui.TableNextColumn();
-            ImGui.AlignTextToFramePadding();
-            ImGui.Text("X");
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(boxWidth);
-            _changedManually |= ImGui.InputFloat("##manual_x", ref _manualCameraX, 0, 0, "%.1f"u8);
+            ImGui.SetNextItemWidth(inputWidth);
+            _changedManually |= ImPB.CoordinateFloat("X##x", ref _manualX, !editing, "%.1f");
 
             ImGui.TableNextColumn();
-            ImGui.Text("Y");
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(boxWidth);
-            _changedManually |= ImGui.InputFloat("##manual_y", ref _manualCameraZ, 0, 0, "%.1f"u8);
+            ImGui.SetNextItemWidth(inputWidth);
+            _changedManually |= ImPB.CoordinateFloat("Y##y", ref _manualZ, !editing, "%.1f");
 
             ImGui.TableNextColumn();
-            ImGui.Text("A°");
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(boxWidth);
-            _changedManually |= ImGui.InputFloat("##angle", ref _manualCameraTheta, 0, 0, "%.1f"u8);
-        }
-
-        if (!_editingManually)
-        {
-            ImGui.EndDisabled();
+            ImGui.SetNextItemWidth(inputWidth);
+            _changedManually |= ImPB.CoordinateFloat("A##a", ref _manualYaw, !editing, "%.1f");
         }
     }
 
@@ -152,9 +137,9 @@ internal class CameraPanel(
         else
         {
             _editingManually = ImGui.Button("Coordinates", size);
-            _manualCameraX = _camera.Camera.X;
-            _manualCameraZ = _camera.Camera.Z;
-            _manualCameraTheta = 360f * _camera.Direction.LonRadians / MathF.Tau;
+            _manualX = _camera.Camera.X;
+            _manualZ = _camera.Camera.Z;
+            _manualYaw = 360f * _camera.Direction.LonRadians / MathF.Tau;
         }
 
         if (discard)
@@ -164,8 +149,8 @@ internal class CameraPanel(
 
         if (apply)
         {
-            _camera.SetCameraPositionXZ(new Vector2(_manualCameraX, _manualCameraZ));
-            _camera.SetCameraYawRadians(MathF.Tau * _manualCameraTheta / 360f);
+            _camera.SetCameraPositionXZ(new Vector2(_manualX, _manualZ));
+            _camera.SetCameraYawRadians(MathF.Tau * _manualYaw / 360f);
             _editingManually = false;
             return _changedManually;
         }
@@ -369,6 +354,7 @@ internal class CameraPanel(
         if (canvas.DragTarget(ref newTargetXZ))
         {
             _camera.SetTargetPositionXZ(newTargetXZ, shiftHeld);
+            _editingManually = false;
             changed = true;
         }
 
@@ -382,6 +368,7 @@ internal class CameraPanel(
         if (canvas.DragCamera(ref newCameraXZ))
         {
             _camera.SetCameraPositionXZ(newCameraXZ, shiftHeld);
+            _editingManually = false;
             changed = true;
         }
 
@@ -394,6 +381,7 @@ internal class CameraPanel(
         if (!changed)
         {
             changed |= PanOrRotate(canvas);
+            _editingManually &= !changed;
         }
 
         // Mousewheel zoom.
@@ -403,6 +391,7 @@ internal class CameraPanel(
             if (wheelDelta != 0)
             {
                 _camera.AdjustCameraDistance(-wheelDelta);
+                _editingManually = false;
                 changed = true;
             }
         }

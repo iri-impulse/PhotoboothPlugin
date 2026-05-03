@@ -18,7 +18,6 @@ public ref struct FacingCanvas : IDisposable
 
     private const uint BorderColor = 0xD0FFFFFF;
     private const uint TopTextColor = 0x80FFFFFF;
-    private const uint PositionTextColor = 0xFF606060u;
 
     private const float Padding = 12f;
     private const float HandleSize = 10f;
@@ -51,6 +50,7 @@ public ref struct FacingCanvas : IDisposable
         var hasLabel = !label.StartsWith("##");
         if (hasLabel)
         {
+            ImGui.AlignTextToFramePadding();
             ImGui.Text(label);
         }
 
@@ -116,18 +116,5 @@ public ref struct FacingCanvas : IDisposable
     {
         // Bounding box for visibility.
         ImGeo.AddRect(_topLeft - _viewPadding, _bottomRight + _viewPadding, BorderColor);
-    }
-
-    public void AddCoordinates(SphereLL dir)
-    {
-        var lon = dir.LonDegrees;
-        var lat = dir.LatDegrees;
-
-        using var font = ImRaii.PushFont(UiBuilder.MonoFont);
-        var text = $"{lon, 5:##0.0} H / {lat, 5:##0.0} V";
-        var size = ImGui.CalcTextSize(text);
-        var pos = ImGui.GetItemRectMax() - size - ImGui.GetStyle().ItemSpacing;
-
-        ImGeo.GetActiveDrawList().AddText(pos, PositionTextColor, text);
     }
 }

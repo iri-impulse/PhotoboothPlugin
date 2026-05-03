@@ -13,7 +13,7 @@ public static partial class ImPB
         ref float value,
         // Until Dalamud's ImGui binding supports it, we have to pass this through manually.
         bool disabled = false,
-        string format = "%.1f"
+        string format = "%.2f"
     )
     {
         var fullWidth = ImGui.CalcItemWidth();

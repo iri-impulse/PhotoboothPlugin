@@ -138,9 +138,9 @@ internal class FacingPanel(PortraitController portrait, Configuration config)
             var editing = state.EditingManually;
             using var width = ImRaii.ItemWidth(inputWidth);
             ImGui.SameLine(0, 2 * itemSpacing);
-            var changedX = ImPB.CoordinateFloat("X", ref state.ManualYaw, !editing, "%.1f");
+            var changedX = ImPB.CoordinateFloat("X", ref state.ManualYaw, !editing);
             ImGui.SameLine(0, itemSpacing);
-            var changedY = ImPB.CoordinateFloat("Y", ref state.ManualPitch, !editing, "%.1f");
+            var changedY = ImPB.CoordinateFloat("Y", ref state.ManualPitch, !editing);
             state.ChangedManually |= changedX || changedY;
         }
 

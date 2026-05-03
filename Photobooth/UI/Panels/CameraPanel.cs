@@ -108,15 +108,15 @@ internal class CameraPanel(
 
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(inputWidth);
-            _changedManually |= ImPB.CoordinateFloat("X##x", ref _manualX, !editing, "%.1f");
+            _changedManually |= ImPB.CoordinateFloat("X##x", ref _manualX, !editing);
 
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(inputWidth);
-            _changedManually |= ImPB.CoordinateFloat("Y##y", ref _manualZ, !editing, "%.1f");
+            _changedManually |= ImPB.CoordinateFloat("Y##y", ref _manualZ, !editing);
 
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(inputWidth);
-            _changedManually |= ImPB.CoordinateFloat("A##a", ref _manualYaw, !editing, "%.1f");
+            _changedManually |= ImPB.CoordinateFloat("A##a", ref _manualYaw, !editing);
         }
     }
 

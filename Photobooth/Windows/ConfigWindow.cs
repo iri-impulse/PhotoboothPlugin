@@ -47,15 +47,6 @@ public class ConfigWindow : Window, IDisposable
 
         HintText($"You can open the window manually with {Plugin.CommandName}.");
 
-        var showCoordinates = _configuration.ShowCoordinates;
-        if (ImGui.Checkbox("Show camera coordinates", ref showCoordinates))
-        {
-            _configuration.ShowCoordinates = showCoordinates;
-            _configuration.Save();
-        }
-
-        HintText("This can be useful for reproducing a portrait later.");
-
         ImGui.Spacing();
 
         ImGui.AlignTextToFramePadding();

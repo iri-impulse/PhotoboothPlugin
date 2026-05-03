@@ -26,7 +26,6 @@ public class CameraCanvas : IDisposable
     private const uint SunColor = 0xFF00EEEEu;
     private const uint SunActiveColor = 0xFF44FFFFu;
     private const uint OrbitColor = 0x60FFFFFFu;
-    private const uint PositionTextColor = 0xFF606060u;
     private const uint LegendTextColor = 0xB0FFFFFFu;
 
     private const float HandleSize = 10f;
@@ -226,19 +225,6 @@ public class CameraCanvas : IDisposable
         }
 
         AddTargetMarker(targetXZ, forward);
-    }
-
-    public void AddPositionText(Vector2 cameraXZ, Vector2 targetXZ)
-    {
-        var cameraYaw = (cameraXZ - targetXZ).Atan2();
-        var angle = (cameraYaw / MathF.Tau * 360f + 360f) % 360f;
-
-        using var font = ImRaii.PushFont(UiBuilder.MonoFont);
-        var text = $"{cameraXZ.X, 7:##0.00} X / {cameraXZ.Y, 7:##0.00} Y / {angle, 6:##0.00}°";
-        var size = ImGui.CalcTextSize(text);
-        var pos = ImGui.GetItemRectMax() - size - ImGui.GetStyle().ItemSpacing;
-
-        ImGeo.GetActiveDrawList().AddText(pos, PositionTextColor, text);
     }
 
     public void AddLightMarker(SphereLL lightDirection)

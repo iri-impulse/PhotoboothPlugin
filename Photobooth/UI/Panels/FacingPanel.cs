@@ -57,11 +57,6 @@ internal class FacingPanel(PortraitController portrait, Configuration config)
     {
         using var canvas = new FacingCanvas(label, topleft, bottomright);
 
-        if (_config.ShowCoordinates)
-        {
-            canvas.AddCoordinates(dir);
-        }
-
         if (FaceControlMessage(control) is string disabledReason)
         {
             canvas.AddTopText(disabledReason);

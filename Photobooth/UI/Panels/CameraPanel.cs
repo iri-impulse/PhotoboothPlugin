@@ -76,7 +76,6 @@ internal class CameraPanel(
 
         // Camera canvas area.
         changed |= CameraViewport(e);
-        changed |= ManualCameraControls();
 
         // Independent camera controls.
         changed |= CameraWidgets();
@@ -88,85 +87,71 @@ internal class CameraPanel(
         }
     }
 
-    private bool ManualCameraControls()
+    private void ManualCameraControls()
     {
         using var color = ImRaii
             .PushColor(ImGuiCol.Button, 0x00000000, !_editingManually)
             .Push(ImGuiCol.FrameBg, 0x00000000, !_editingManually);
 
-        var discard = false;
-        var apply = false;
+        var boxWidth = ImGui.CalcTextSize("-XXX.X").X;
+        var textWidth = ImGui.CalcTextSize(" °A").X;
+        var iconWidth = ImGuiComponents.GetIconButtonWithTextWidth(FontAwesomeIcon.Ad, "");
 
-        var paddingX = ImGui.GetStyle().FramePadding.X;
-        var spacingX = ImGui.GetStyle().ItemSpacing.X;
-        var labelWidth = ImGui.CalcTextSize("A° ").X;
-        var interWidth = ImGui.CalcTextSize("=").X;
-        var inputWidth = ImGui.CalcTextSize("-000.0").X + paddingX * 2;
-        var iconWidth = ImGuiComponents.GetIconButtonWithTextWidth(FontAwesomeIcon.Check, "");
-
-        var interSize = new Vector2(interWidth, 0);
-
-        var totalWidth =
-            3 * (labelWidth + inputWidth) + 2 * iconWidth + 2 * interWidth + 5 * spacingX;
-        var availableWidth = ImGui.GetContentRegionAvail().X;
-
-        if (availableWidth > totalWidth)
-        {
-            ImGui.Dummy(new Vector2(availableWidth - totalWidth, 0));
-        }
+        ImGui.Dummy(new Vector2(iconWidth, 0));
+        ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X);
 
         if (!_editingManually)
         {
             ImGui.BeginDisabled();
         }
 
-        ImGui.SameLine();
-        ImGui.AlignTextToFramePadding();
-        ImGui.SetNextItemWidth(labelWidth);
-        ImGui.Text("X:");
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(inputWidth);
-        _changedManually |= ImGui.InputFloat("##manual_x", ref _manualCameraX, 0, 0, "%.1f"u8);
+        using (ImRaii.Table("##manual_camera", 3))
+        {
+            ImGui.TableNextRow();
 
-        ImGui.SameLine();
-        ImGui.Dummy(interSize);
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(labelWidth);
-        ImGui.Text("Y:");
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(inputWidth);
-        _changedManually |= ImGui.InputFloat("##manual_y", ref _manualCameraZ, 0, 0, "%.1f"u8);
+            ImGui.TableNextColumn();
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text("X");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(boxWidth);
+            _changedManually |= ImGui.InputFloat("##manual_x", ref _manualCameraX, 0, 0, "%.1f"u8);
 
-        ImGui.SameLine();
-        ImGui.Dummy(interSize);
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(labelWidth);
-        ImGui.Text("A°");
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(inputWidth);
-        _changedManually |= ImGui.InputFloat("##angle", ref _manualCameraTheta, 0, 0, "%.1f"u8);
+            ImGui.TableNextColumn();
+            ImGui.Text("Y");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(boxWidth);
+            _changedManually |= ImGui.InputFloat("##manual_y", ref _manualCameraZ, 0, 0, "%.1f"u8);
+
+            ImGui.TableNextColumn();
+            ImGui.Text("A°");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(boxWidth);
+            _changedManually |= ImGui.InputFloat("##angle", ref _manualCameraTheta, 0, 0, "%.1f"u8);
+        }
 
         if (!_editingManually)
         {
             ImGui.EndDisabled();
         }
+    }
+
+    private bool ManualCameraToggle(Vector2 size)
+    {
+        var discard = false;
+        var apply = false;
 
         if (_editingManually)
         {
-            ImGui.SameLine();
-            apply = ImGuiComponents.IconButton(FontAwesomeIcon.Check);
-            ImGui.SameLine();
+            var xStart = ImGui.GetCursorPosX();
             discard = ImGuiComponents.IconButton(FontAwesomeIcon.Times);
+            ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+            var xEnd = ImGui.GetCursorPosX();
+            var sizeLeft = new Vector2(xStart - xEnd + size.X, size.Y);
+            apply = ImGui.Button("Apply", sizeLeft);
         }
         else
         {
-            ImGui.SameLine();
-            ImGui.Dummy(new Vector2(iconWidth - spacingX, 0));
-            ImGui.SameLine();
-            using (ImRaii.PushStyle(ImGuiStyleVar.Alpha, ImGui.GetStyle().Alpha * 0.5f))
-            {
-                _editingManually = ImGuiComponents.IconButton(FontAwesomeIcon.PencilAlt);
-            }
+            _editingManually = ImGui.Button("Coordinates", size);
             _manualCameraX = _camera.Camera.X;
             _manualCameraZ = _camera.Camera.Z;
             _manualCameraTheta = 360f * _camera.Direction.LonRadians / MathF.Tau;
@@ -197,8 +182,11 @@ internal class CameraPanel(
         using (ImRaii.Group())
         {
             var buttonWidth = 0.3f * entireWidth;
-            changed |= ResetRotationButton(new Vector2(buttonWidth, 0));
-            changed |= FaceCharacterButton(new Vector2(buttonWidth, 0));
+            var size = new Vector2(buttonWidth, 0);
+
+            changed |= ManualCameraToggle(size);
+            changed |= ResetRotationButton(size);
+            changed |= FaceCharacterButton(size);
             changed |= TrackMotionCheckbox();
             changed |= FoVCompensationCheckbox();
         }
@@ -210,6 +198,7 @@ internal class CameraPanel(
         {
             using var _ = ImRaii.ItemWidth(-float.Epsilon);
 
+            ManualCameraControls();
             changed |= ImageRotationSlider();
             changed |= CameraPitchSlider();
             changed |= PivotHeightSlider();
@@ -419,11 +408,6 @@ internal class CameraPanel(
         }
 
         // Draw things that might have changed.
-        if (_config.ShowCoordinates)
-        {
-            canvas.AddPositionText(newCameraXZ, targetXZ);
-        }
-
         canvas.AddCameraWedge(_camera.Camera.XZ(), _camera.Direction.LonRadians, _camera.FoV);
         canvas.AddPlayerMarker(subjectXZ, e.CharacterDirection());
         canvas.AddLightMarker(lightDirection);

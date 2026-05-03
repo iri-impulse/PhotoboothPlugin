@@ -185,11 +185,9 @@ public static partial class ImGeo
         // Set current/active handle info.
         _CurrentHandle = handle;
         var hovered = IsHandleHovered();
-        if (
-            ImGui.IsItemActivated()
-            && ImGui.IsMouseDown(ImGuiMouseButton.Left | ImGuiMouseButton.Right)
-            && handle.HitTest(MouseViewPos())
-        )
+        var mouseDown =
+            ImGui.IsMouseDown(ImGuiMouseButton.Left) || ImGui.IsMouseDown(ImGuiMouseButton.Right);
+        if (ImGui.IsItemActivated() && mouseDown && handle.HitTest(MouseViewPos()))
         {
             _ActiveHandleId = handle.Id;
             _ActiveHandleOffset = MouseViewPos() - handle.Position;

@@ -107,6 +107,49 @@ public class PortraitController : IDisposable
         return _changes != PortraitChanges.None;
     }
 
+    internal void Import(PortraitClipboard.PortraitClipboardSettings settings)
+    {
+        Data.BannerTimeline = (ushort)settings.BannerTimeline;
+        Data.AnimationProgress = settings.AnimationProgress;
+        Data.Expression = (byte)settings.Expression;
+
+        Data.HeadDirection.X = (Half)settings.HeadX;
+        Data.HeadDirection.Y = (Half)settings.HeadY;
+        Data.EyeDirection.X = (Half)settings.EyeX;
+        Data.EyeDirection.Y = (Half)settings.EyeY;
+
+        Data.AmbientLightingColorRed = settings.AmbientRed;
+        Data.AmbientLightingColorGreen = settings.AmbientGreen;
+        Data.AmbientLightingColorBlue = settings.AmbientBlue;
+        Data.AmbientLightingBrightness = ClampBrightness(settings.AmbientBrightness);
+
+        Data.DirectionalLightingColorRed = settings.DirectionalRed;
+        Data.DirectionalLightingColorGreen = settings.DirectionalGreen;
+        Data.DirectionalLightingColorBlue = settings.DirectionalBlue;
+        Data.DirectionalLightingBrightness = ClampBrightness(settings.DirectionalBrightness);
+        Data.DirectionalLightingVerticalAngle = settings.DirectionalVerticalAngle;
+        Data.DirectionalLightingHorizontalAngle = settings.DirectionalHorizontalAngle;
+
+        Data.ImageRotation = Math.Clamp(
+            settings.ImageRotation,
+            CameraConsts.RotationMin,
+            CameraConsts.RotationMax
+        );
+        Data.CameraZoom = Math.Clamp(settings.CameraZoom, CameraConsts.ZoomMin, CameraConsts.ZoomMax);
+
+        _changes =
+            PortraitChanges.AmbientLightColor
+            | PortraitChanges.DirectionalLightColor
+            | PortraitChanges.DirectionalLightDirection
+            | PortraitChanges.EyeDirection
+            | PortraitChanges.HeadDirection
+            | PortraitChanges.CameraZoom
+            | PortraitChanges.ImageRotation
+            | PortraitChanges.Pose
+            | PortraitChanges.Expression
+            | PortraitChanges.AnimationProgress;
+    }
+
     /// <summary>
     /// Apply changes to a CharaViewPortrait, somewhat delicately.
     /// </summary>

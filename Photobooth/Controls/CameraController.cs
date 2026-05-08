@@ -143,6 +143,16 @@ internal class CameraController
         Subject = Vector3.Zero;
     }
 
+    public void Import(PortraitClipboard.CameraClipboardSettings settings)
+    {
+        Builtin.SetPivot(settings.Pivot);
+        Builtin.SetDistance(settings.Distance);
+        Builtin.SetDirection(settings.Direction);
+        Builtin.SetZoom(settings.Zoom);
+
+        RecomputeCustom();
+    }
+
     public void SetZoom(byte zoom)
     {
         Builtin.SetZoom(zoom);

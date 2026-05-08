@@ -24,6 +24,7 @@ public class MainWindow : Window, IDisposable
     private readonly CameraPanel _cameraPanel;
     private readonly FacingPanel _facingPanel;
     private readonly LightingPanel _lightingPanel;
+    private readonly ClipboardPanel _clipboardPanel;
 
     // The temporary/stateful attachment side of the window, so "auto" doesn't
     // flip sides when moving the banner editor unless there's no more space.
@@ -71,6 +72,7 @@ public class MainWindow : Window, IDisposable
         _cameraPanel = new CameraPanel(_portrait, _camera, _plugin.Configuration);
         _facingPanel = new FacingPanel(_portrait, _plugin.Configuration);
         _lightingPanel = new LightingPanel(_portrait);
+        _clipboardPanel = new ClipboardPanel(_portrait, _camera);
     }
 
     public void Dispose()
@@ -206,6 +208,7 @@ public class MainWindow : Window, IDisposable
         _animationPanel.Draw();
         _cameraPanel.Draw();
         _facingPanel.Draw();
+        _clipboardPanel.Draw();
     }
 
     private unsafe void Unopened()
